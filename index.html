@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseChat — Messagerie Instantanée</title>
+    <link rel="stylesheet" href="css/style.css">+
+    <link rel="icon" type="image/svg+xml" href="assets/icons/logo.svg">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="app-body">
+    <!-- Écran de chargement initial de session -->
+    <div id="global-loader" class="global-loader">
+        <div class="loader-content">
+            <div class="spinner-large"></div>
+            <p>Chargement de votre espace sécurisé...</p>
+        </div>
+    </div>
+
+    <!-- Bannière d'état réseau / erreur globale -->
+    <div id="connection-banner" class="connection-banner hidden" role="status">
+        Connexion interrompue. Tentative de reconnexion en cours...
+    </div>
+
+    <!-- Conteneur principal de l'application -->
+    <div id="app-shell" class="app-shell hidden">
+        
+        <!-- A. BARRE LATÉRALE -->
+        <aside class="sidebar" id="sidebar">
+            <!-- En-tête Logo & Actions rapides -->
+            <header class="sidebar-header">
+                <div class="app-brand">
+                    <div class="brand-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
+                    </div>
+                    <span class="brand-name">PulseChat</span>
+                </div>
+
+                <div class="sidebar-actions">
+                    <button type="button" id="btn-open-profile" class="icon-btn" title="Paramètres du profil" aria-label="Paramètres du profil">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </button>
+                    <button type="button" id="btn-logout" class="icon-btn icon-btn-danger" title="Se déconnecter" aria-label="Se déconnecter">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Carte utilisateur connecté -->
+            <div class="current-user-card" id="current-user-card" title="Cliquez pour modifier votre profil">
+                <div class="avatar-wrapper">
+                    <img id="sidebar-user-avatar" src="" alt="Avatar" class="avatar avatar-md hidden">
+                    <div id="sidebar-user-initials" class="avatar-initials avatar-md">--</div>
+                    <span class="status-dot status-online" title="En ligne"></span>
+                </div>
+                <div class="current-user-info">
+                    <div id="sidebar-user-name" class="user-fullname">Chargement...</div>
+                    <div id="sidebar-user-username" class="user-handle">@...</div>
+                </div>
+            </div>
+
+            <!-- Barre de recherche d'utilisateurs -->
+            <div class="search-section">
+                <div class="search-input-box">
+                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="user-search-input" placeholder="Rechercher un nom ou @username..." autocomplete="off">
+                    <button type="button" id="btn-clear-search" class="clear-search-btn hidden" aria-label="Effacer la recherche">&times;</button>
+                </div>
+            </div>
+
+            <!-- Onglets Discussions / Résultats de recherche -->
+            <div class="sidebar-tabs">
+                <button type="button" class="tab-btn active" data-tab="conversations" id="tab-conversations">
+                    Discussions
+                </button>
+                <button type="button" class="tab-btn" data-tab="directory" id="tab-directory">
+                    Utilisateurs
+                </button>
+            </div>
+
+            <!-- Liste dynamique (Conversations ou Utilisateurs) -->
+            <div class="sidebar-list-container">
+                <!-- Vue Conversations -->
+                <div id="conversations-view" class="list-panel">
+                    <div id="conversations-loading" class="panel-state">
+                        <div class="spinner-sm"></div>
+                        <span>Chargement des discussions...</span>
+                    </div>
+                    <div id="conversations-empty" class="panel-state hidden">
+                        <p>Aucune conversation pour le moment.</p>
+                        <small>Recherchez un utilisateur ci-dessus pour démarrer un échange.</small>
+                    </div>
+                    <ul id="conversations-list" class="item-list"></ul>
+                </div>
+
+                <!-- Vue Recherche / Annuaire Utilisateurs -->
+                <div id="users-view" class="list-panel hidden">
+                    <div id="users-loading" class="panel-state hidden">
+                        <div class="spinner-sm"></div>
+                        <span>Recherche en cours...</span>
+                    </div>
+                    <div id="users-empty" class="panel-state hidden">
+                        <p>Aucun utilisateur trouvé.</p>
+                        <small>Essayez avec un autre nom ou identifiant.</small>
+                    </div>
+                    <ul id="users-list" class="item-list"></ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- B & C. ZONE PRINCIPALE DE CONVERSATION -->
+        <main class="chat-area" id="chat-area">
+            
+            <!-- C. État initial (Aucune conversation sélectionnée) -->
+            <div id="chat-welcome" class="chat-welcome">
+                <div class="welcome-card">
+                    <div class="welcome-illustration">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <h2>Bienvenue sur PulseChat</h2>
+                    <p>Sélectionnez une discussion dans la barre latérale ou recherchez un utilisateur pour démarrer une conversation privée instantanée.</p>
+                    <button type="button" id="btn-welcome-search" class="btn btn-primary">
+                        Rechercher une personne
+                    </button>
+                </div>
+            </div>
+
+            <!-- B. Conversation active -->
+            <div id="chat-active" class="chat-active hidden">
+                <!-- En-tête du correspondant -->
+                <header class="chat-header">
+                    <div class="chat-header-left">
+                        <button type="button" id="btn-back-mobile" class="icon-btn mobile-only" aria-label="Retour aux discussions">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+
+                        <div class="chat-peer-trigger" id="btn-view-peer-profile" title="Voir le profil">
+                            <div class="avatar-wrapper">
+                                <img id="peer-avatar" src="" alt="Avatar" class="avatar avatar-md hidden">
+                                <div id="peer-initials" class="avatar-initials avatar-md">--</div>
+                                <span id="peer-status-dot" class="status-dot status-offline"></span>
+                            </div>
+                            <div class="peer-meta">
+                                <h2 id="peer-fullname" class="peer-name">Nom du contact</h2>
+                                <span id="peer-status-text" class="peer-status">Hors ligne</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-header-right">
+                        <button type="button" id="btn-peer-info" class="icon-btn" title="Informations du contact" aria-label="Informations du contact">
+                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Zone d'affichage des messages -->
+                <div class="messages-container" id="messages-container">
+                    <div id="load-older-wrapper" class="load-older-wrapper hidden">
+                        <button type="button" id="btn-load-older" class="btn btn-secondary btn-sm">
+                            Charger les messages précédents
+                        </button>
+                    </div>
+
+                    <div id="messages-loading" class="panel-state hidden">
+                        <div class="spinner-sm"></div>
+                        <span>Chargement de l'historique...</span>
+                    </div>
+
+                    <div id="messages-empty" class="panel-state hidden">
+                        <p>Aucun message dans cette conversation.</p>
+                        <small>Envoyez le premier message ci-dessous.</small>
+                    </div>
+
+                    <div id="messages-list" class="messages-list"></div>
+                </div>
+
+                <!-- Zone d'erreur d'envoi -->
+                <div id="send-error-banner" class="send-error-banner hidden">
+                    <span id="send-error-text">Impossible d'envoyer le message.</span>
+                    <button type="button" id="btn-dismiss-send-error">&times;</button>
+                </div>
+
+                <!-- Formulaire de saisie -->
+                <footer class="chat-footer">
+                    <form id="message-form" class="message-form">
+                        <textarea 
+                            id="message-input" 
+                            rows="1" 
+                            maxlength="2000" 
+                            placeholder="Écrivez votre message..." 
+                            aria-label="Écrivez votre message"></textarea>
+                        <button type="submit" id="btn-send-message" class="btn-send" disabled aria-label="Envoyer le message">
+                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </form>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALE 1 : PARAMÈTRES DU PROFIL UTILISATEUR -->
+    <div id="modal-profile" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-profile-title">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-profile-title">Mon Profil</h3>
+                <button type="button" class="icon-btn modal-close" data-close="modal-profile" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="profile-alert" class="alert hidden"></div>
+
+                <div class="profile-avatar-editor">
+                    <div class="avatar-wrapper avatar-lg-wrapper">
+                        <img id="modal-profile-avatar" src="" alt="Avatar" class="avatar avatar-lg hidden">
+                        <div id="modal-profile-initials" class="avatar-initials avatar-lg">--</div>
+                    </div>
+                    <div class="avatar-upload-controls">
+                        <label for="avatar-file-input" class="btn btn-secondary btn-sm">
+                            Changer la photo
+                        </label>
+                        <input type="file" id="avatar-file-input" accept="image/png, image/jpeg, image/webp" class="hidden">
+                        <small>JPG, PNG ou WebP (Max. 2 Mo)</small>
+                    </div>
+                </div>
+
+                <form id="profile-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="edit-fullname">Nom complet</label>
+                        <input type="text" id="edit-fullname" required minlength="2" maxlength="60">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-username">Nom d'utilisateur</label>
+                        <div class="input-prefix-wrapper">
+                            <span class="input-prefix">@</span>
+                            <input type="text" id="edit-username" required minlength="3" maxlength="24">
+                        </div>
+                        <small class="field-hint">Lettres minuscules, chiffres et underscores uniquement.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-bio">Biographie (facultatif)</label>
+                        <textarea id="edit-bio" rows="2" maxlength="160" placeholder="Quelques mots sur vous..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Adresse e-mail (privée)</label>
+                        <input type="text" id="edit-email-readonly" disabled class="input-readonly">
+                    </div>
+
+                    <div class="modal-footer-actions">
+                        <button type="button" class="btn btn-secondary modal-close" data-close="modal-profile">Annuler</button>
+                        <button type="submit" id="btn-save-profile" class="btn btn-primary">
+                            <span class="btn-text">Enregistrer</span>
+                            <span class="spinner hidden"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE 2 : PROFIL D'UN AUTRE UTILISATEUR -->
+    <div id="modal-peer-profile" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-peer-title">
+        <div class="modal-card modal-card-sm">
+            <div class="modal-header">
+                <h3 id="modal-peer-title">Profil du contact</h3>
+                <button type="button" class="icon-btn modal-close" data-close="modal-peer-profile" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="modal-body peer-profile-details">
+                <div class="avatar-wrapper avatar-lg-wrapper">
+                    <img id="view-peer-avatar" src="" alt="Avatar" class="avatar avatar-lg hidden">
+                    <div id="view-peer-initials" class="avatar-initials avatar-lg">--</div>
+                    <span id="view-peer-status-dot" class="status-dot status-offline"></span>
+                </div>
+                <h4 id="view-peer-fullname" class="peer-detail-name">Nom</h4>
+                <p id="view-peer-username" class="peer-detail-username">@username</p>
+                <span id="view-peer-status-badge" class="status-badge">Hors ligne</span>
+                <p id="view-peer-bio" class="peer-detail-bio">Aucune biographie renseignée.</p>
+                <div class="peer-detail-meta">
+                    <span>Membre depuis : <strong id="view-peer-joined">--</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts modulaires -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/presence.js"></script>
+    <script src="js/profile.js"></script>
+    <script src="js/conversations.js"></script>
+    <script src="js/users.js"></script>
+    <script src="js/messages.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
