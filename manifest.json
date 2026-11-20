@@ -1,0 +1,19 @@
+{
+  "name": "PulseChat — Messagerie Instantanée",
+  "short_name": "PulseChat",
+  "description": "Application de messagerie instantanée en temps réel avec stickers, GIF et messages audio.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f1f5f9",
+  "theme_color": "#1d4ed8",
+  "icons": [
+    {
+      "src": "assets/icons/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

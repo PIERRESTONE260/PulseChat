@@ -4,8 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PulseChat — Messagerie Instantanée</title>
-    <link rel="stylesheet" href="css/style.css">+
+    <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/svg+xml" href="assets/icons/logo.svg">
+    <link rel="apple-touch-icon" href="assets/icons/logo.svg">
+    <meta name="theme-color" content="#1d4ed8">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="app-body">
@@ -202,9 +208,53 @@
                     <button type="button" id="btn-dismiss-send-error">&times;</button>
                 </div>
 
+                <!-- Barre de réponse / citation -->
+                <div id="reply-preview-bar" class="reply-preview-bar hidden">
+                    <div class="reply-preview-info">
+                        <span>Réponse à :</span>
+                        <strong id="reply-preview-text"></strong>
+                    </div>
+                    <button type="button" id="btn-cancel-reply" aria-label="Annuler la réponse">&times;</button>
+                </div>
+
+                <!-- Barre d'enregistrement audio -->
+                <div id="audio-recorder-bar" class="audio-recorder-bar hidden">
+                    <span class="rec-dot"></span>
+                    <span id="audio-timer">00:00</span>
+                    <audio id="audio-preview-player" controls class="hidden"></audio>
+                    <div class="audio-recorder-actions">
+                        <button type="button" id="btn-stop-audio" class="btn btn-secondary btn-sm">Stop</button>
+                        <button type="button" id="btn-send-audio" class="btn btn-primary btn-sm hidden">Envoyer vocal</button>
+                        <button type="button" id="btn-cancel-audio" class="icon-btn icon-btn-danger" title="Annuler">&times;</button>
+                    </div>
+                </div>
+
+                <!-- Popover Stickers -->
+                <div id="sticker-picker-popover" class="media-popover hidden">
+                    <div class="popover-header">
+                        <span>Stickers</span>
+                        <button type="button" id="btn-open-sticker-creator" class="btn btn-primary btn-sm">+ Créer un sticker</button>
+                    </div>
+                    <div id="stickers-grid" class="media-grid"></div>
+                </div>
+
+                <!-- Popover GIF -->
+                <div id="gif-picker-popover" class="media-popover hidden">
+                    <div class="popover-header">
+                        <span>GIF</span>
+                        <button type="button" id="btn-open-gif-creator" class="btn btn-primary btn-sm">+ Créer un GIF</button>
+                    </div>
+                    <div id="gifs-grid" class="media-grid"></div>
+                </div>
+
                 <!-- Formulaire de saisie -->
                 <footer class="chat-footer">
                     <form id="message-form" class="message-form">
+                        <button type="button" id="btn-toggle-stickers" class="icon-btn" title="Stickers" aria-label="Stickers">🏷️</button>
+                        <button type="button" id="btn-toggle-gifs" class="icon-btn" title="GIF" aria-label="GIF">🎞️</button>
+                        <label for="chat-image-input" class="icon-btn" title="Envoyer une photo" aria-label="Envoyer une photo">📷</label>
+                        <input type="file" id="chat-image-input" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden">
+                        <button type="button" id="btn-record-audio" class="icon-btn" title="Message vocal" aria-label="Message vocal">🎤</button>
                         <textarea 
                             id="message-input" 
                             rows="1" 
@@ -308,6 +358,52 @@
         </div>
     </div>
 
+    <!-- MODALE 3 : CRÉATEUR DE STICKER -->
+    <div id="modal-sticker-creator" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Créer mon sticker</h3>
+                <button type="button" class="icon-btn modal-close" data-close="modal-sticker-creator" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="modal-body creator-body">
+                <input type="file" id="sticker-source-input" accept="image/png,image/jpeg,image/webp">
+                <canvas id="sticker-canvas" class="creator-canvas"></canvas>
+                <input type="text" id="sticker-caption-input" maxlength="24" placeholder="Texte sur le sticker (optionnel)">
+                <label class="checkbox-row">
+                    <input type="checkbox" id="sticker-white-border" checked>
+                    <span>Contour blanc façon sticker</span>
+                </label>
+                <div class="modal-footer-actions">
+                    <button type="button" id="btn-save-sticker" class="btn btn-primary">Enregistrer & Envoyer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE 4 : CRÉATEUR DE GIF -->
+    <div id="modal-gif-creator" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Créer mon GIF animé</h3>
+                <button type="button" class="icon-btn modal-close" data-close="modal-gif-creator" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="modal-body creator-body">
+                <input type="file" id="gif-frames-input" accept="image/png,image/jpeg,image/webp" multiple>
+                <small id="gif-frames-count">Sélectionnez 2 à 8 images</small>
+                <select id="gif-speed-select">
+                    <option value="150">Rapide (150 ms)</option>
+                    <option value="250" selected>Normal (250 ms)</option>
+                    <option value="450">Lent (450 ms)</option>
+                </select>
+                <button type="button" id="btn-generate-gif" class="btn btn-secondary" disabled>Générer le GIF</button>
+                <img id="gif-result-preview" alt="Aperçu GIF" class="gif-preview-img hidden">
+                <div class="modal-footer-actions">
+                    <button type="button" id="btn-send-created-gif" class="btn btn-primary hidden">Envoyer le GIF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts modulaires -->
     <script src="js/supabase-config.js"></script>
     <script src="js/presence.js"></script>
@@ -315,6 +411,7 @@
     <script src="js/conversations.js"></script>
     <script src="js/users.js"></script>
     <script src="js/messages.js"></script>
+    <script src="js/media.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

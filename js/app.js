@@ -30,11 +30,19 @@ const AppController = {
             UsersModule.init(this.currentUser.id);
             await ConversationsModule.init(this.currentUser.id);
             MessagesModule.init(this.currentUser.id);
+            await MediaModule.init(this.currentUser.id);
 
             // 4. Brancher les événements d'interface
             this.bindUIEvents();
 
-            // 5. Afficher l'application
+            // 5. Enregistrer le Service Worker pour l'installation mobile (PWA)
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js').catch((err) => {
+                    console.warn('Service Worker non enregistré :', err);
+                });
+            }
+
+            // 6. Afficher l'application
             document.getElementById('global-loader').classList.add('hidden');
             document.getElementById('app-shell').classList.remove('hidden');
         } catch (err) {
@@ -112,6 +120,17 @@ const AppController = {
         });
         document.getElementById('btn-peer-info').addEventListener('click', () => {
             if (this.activePeer) ProfileModule.openPeerProfileModal(this.activePeer);
+        });
+
+        // Popovers Stickers & GIF
+        document.getElementById('btn-toggle-stickers')?.addEventListener('click', () => {
+            document.getElementById('gif-picker-popover')?.classList.add('hidden');
+            document.getElementById('sticker-picker-popover')?.classList.toggle('hidden');
+        });
+
+        document.getElementById('btn-toggle-gifs')?.addEventListener('click', () => {
+            document.getElementById('sticker-picker-popover')?.classList.add('hidden');
+            document.getElementById('gif-picker-popover')?.classList.toggle('hidden');
         });
 
         // Mise à jour dynamique des statuts en ligne

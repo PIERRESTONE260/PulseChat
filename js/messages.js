@@ -1,5 +1,5 @@
 /**
- * GESTION DES MESSAGES EN TEMPS RÉEL (Envoi, Réception, Historique, Lecture)
+ * GESTION DES MESSAGES EN TEMPS RÉEL V2 (Texte, Audio, Sticker, GIF, Image, Citation, Édition, Suppression)
  */
 
 const MessagesModule = {
@@ -11,6 +11,7 @@ const MessagesModule = {
     hasMoreOlder: false,
     isSending: false,
     lastRenderedDate: null,
+    replyTargetMessage: null,
 
     init(userId) {
         this.currentUserId = userId;
@@ -19,8 +20,9 @@ const MessagesModule = {
         const sendBtn = document.getElementById('btn-send-message');
         const loadOlderBtn = document.getElementById('btn-load-older');
         const dismissErrBtn = document.getElementById('btn-dismiss-send-error');
+        const cancelReplyBtn = document.getElementById('btn-cancel-reply');
+        const imageInput = document.getElementById('chat-image-input');
 
-        // Auto-ajustement de la hauteur du textarea
         input.addEventListener('input', () => {
             const hasText = input.value.trim().length > 0;
             sendBtn.disabled = !hasText || this.isSending;
@@ -29,7 +31,6 @@ const MessagesModule = {
             input.style.height = `${Math.min(input.scrollHeight, 130)}px`;
         });
 
-        // Envoi avec Entrée (Shift+Entrée pour saut de ligne)
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -41,7 +42,7 @@ const MessagesModule = {
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            await this.sendMessage();
+            await this.sendTextMessage();
         });
 
         loadOlderBtn.addEventListener('click', async () => {
@@ -51,6 +52,46 @@ const MessagesModule = {
         dismissErrBtn.addEventListener('click', () => {
             document.getElementById('send-error-banner').classList.add('hidden');
         });
+
+        if (cancelReplyBtn) {
+            cancelReplyBtn.addEventListener('click', () => this.clearReplyTarget());
+        }
+
+        if (imageInput) {
+            imageInput.addEventListener('change', async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                    await this.sendImageFile(file);
+                    imageInput.value = '';
+                }
+            });
+        }
+    },
+
+    setReplyTarget(msg) {
+        this.replyTargetMessage = msg;
+        const bar = document.getElementById('reply-preview-bar');
+        const textEl = document.getElementById('reply-preview-text');
+        if (!bar || !textEl) return;
+
+        const summary = msg.type === 'text'
+            ? msg.content
+            : msg.type === 'audio'
+                ? '🎤 Message vocal'
+                : msg.type === 'sticker'
+                    ? '🏷️ Sticker'
+                    : msg.type === 'gif'
+                        ? '🎞️ GIF'
+                        : '📷 Photo';
+
+        textEl.textContent = summary;
+        bar.classList.remove('hidden');
+        document.getElementById('message-input').focus();
+    },
+
+    clearReplyTarget() {
+        this.replyTargetMessage = null;
+        document.getElementById('reply-preview-bar')?.classList.add('hidden');
     },
 
     async openConversationMessages(conversationId) {
@@ -58,6 +99,7 @@ const MessagesModule = {
         this.messages = [];
         this.hasMoreOlder = false;
         this.lastRenderedDate = null;
+        this.clearReplyTarget();
 
         const listEl = document.getElementById('messages-list');
         const loadingEl = document.getElementById('messages-loading');
@@ -69,14 +111,12 @@ const MessagesModule = {
         olderWrapper.classList.add('hidden');
         loadingEl.classList.remove('hidden');
 
-        // Détacher l'abonnement précédent
         if (this.messagesChannel) {
             await supabaseClient.removeChannel(this.messagesChannel);
             this.messagesChannel = null;
         }
 
         try {
-            // Charger les N derniers messages (tri descendant puis inversé)
             const { data, error } = await supabaseClient
                 .from('messages')
                 .select('*')
@@ -100,10 +140,7 @@ const MessagesModule = {
                 this.scrollToBottom(true);
             }
 
-            // Marquer les messages reçus comme lus
             await this.markMessagesAsRead(conversationId);
-
-            // Souscrire aux nouveaux messages et mises à jour de lecture en temps réel
             this.subscribeToActiveConversation(conversationId);
         } catch (err) {
             console.error('Erreur chargement messages :', err);
@@ -134,8 +171,6 @@ const MessagesModule = {
 
         this.messages = [...older, ...this.messages];
         this.renderAllMessages();
-
-        // Conserver la position de lecture visuelle
         container.scrollTop = container.scrollHeight - previousScrollHeight;
     },
 
@@ -149,6 +184,35 @@ const MessagesModule = {
         });
     },
 
+    _buildBubbleContent(msg) {
+        let replyHtml = '';
+        if (msg.reply_to_id) {
+            const parent = this.messages.find((m) => m.id === msg.reply_to_id);
+            const parentText = parent
+                ? (parent.type === 'text' ? parent.content : `[${parent.type.toUpperCase()}]`)
+                : 'Message précédent';
+            replyHtml = `<div class="reply-quote">${UsersModule.escapeHtml(parentText)}</div>`;
+        }
+
+        if (msg.type === 'sticker') {
+            return `${replyHtml}<img src="${msg.media_url}" alt="Sticker" class="sticker-bubble-img">`;
+        }
+
+        if (msg.type === 'gif') {
+            return `${replyHtml}<img src="${msg.media_url}" alt="GIF" class="gif-bubble-img">`;
+        }
+
+        if (msg.type === 'image') {
+            return `${replyHtml}<img src="${msg.media_url}" alt="Photo" class="chat-bubble-img">`;
+        }
+
+        if (msg.type === 'audio') {
+            return `${replyHtml}<audio controls preload="metadata" src="${msg.media_url}" class="chat-audio-player"></audio>`;
+        }
+
+        return `${replyHtml}<span class="msg-text-body">${UsersModule.escapeHtml(msg.content || '')}</span>`;
+    },
+
     appendMessageElement(msg, checkAutoScroll = true) {
         const listEl = document.getElementById('messages-list');
         const emptyEl = document.getElementById('messages-empty');
@@ -156,10 +220,8 @@ const MessagesModule = {
 
         emptyEl.classList.add('hidden');
 
-        // Vérifier si l'utilisateur est proche du bas avant insertion
         const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
 
-        // Séparateur de date si changement de jour
         const dateLabel = AppUtils.formatDateDivider(msg.created_at);
         if (dateLabel !== this.lastRenderedDate) {
             const divider = document.createElement('div');
@@ -171,25 +233,75 @@ const MessagesModule = {
 
         const isMine = msg.sender_id === this.currentUserId;
         const row = document.createElement('div');
-        row.className = `message-row ${isMine ? 'sent' : 'received'}`;
+        const isMediaOnly = msg.type === 'sticker' || msg.type === 'gif';
+        row.className = `message-row ${isMine ? 'sent' : 'received'} ${isMediaOnly ? 'media-only' : ''}`;
         row.dataset.messageId = msg.id;
 
         const readHtml = isMine
             ? `<span class="read-indicator" data-read-id="${msg.id}">${msg.is_read ? '✓✓' : '✓'}</span>`
             : '';
 
+        const editedLabel = msg.edited_at ? `<span class="edited-tag">modifié</span>` : '';
+
+        const actionsHtml = `
+            <div class="msg-actions">
+                <button type="button" class="msg-action-btn reply-btn" title="Répondre">↩</button>
+                ${isMine && msg.type === 'text' ? `<button type="button" class="msg-action-btn edit-btn" title="Modifier">✎</button>` : ''}
+                ${isMine ? `<button type="button" class="msg-action-btn delete-btn" title="Supprimer">🗑</button>` : ''}
+            </div>
+        `;
+
         row.innerHTML = `
-            <div class="message-bubble">${UsersModule.escapeHtml(msg.content)}</div>
+            <div class="message-bubble-wrap">
+                <div class="message-bubble">${this._buildBubbleContent(msg)}</div>
+                ${actionsHtml}
+            </div>
             <div class="message-meta">
+                ${editedLabel}
                 <span>${AppUtils.formatMessageTime(msg.created_at)}</span>
                 ${readHtml}
             </div>
         `;
 
+        row.querySelector('.reply-btn')?.addEventListener('click', () => this.setReplyTarget(msg));
+        row.querySelector('.edit-btn')?.addEventListener('click', () => this.editMessage(msg));
+        row.querySelector('.delete-btn')?.addEventListener('click', () => this.deleteMessage(msg.id));
+
         listEl.appendChild(row);
 
         if (checkAutoScroll && (isNearBottom || isMine)) {
             this.scrollToBottom(true);
+        }
+    },
+
+    async editMessage(msg) {
+        const updatedText = prompt('Modifier votre message :', msg.content || '');
+        if (updatedText === null) return;
+        const clean = updatedText.trim();
+        if (!clean || clean === msg.content) return;
+
+        const { error } = await supabaseClient
+            .from('messages')
+            .update({ content: clean, edited_at: new Date().toISOString() })
+            .eq('id', msg.id)
+            .eq('sender_id', this.currentUserId);
+
+        if (error) {
+            alert('Impossible de modifier ce message.');
+        }
+    },
+
+    async deleteMessage(messageId) {
+        if (!confirm('Supprimer ce message ?')) return;
+
+        const { error } = await supabaseClient
+            .from('messages')
+            .delete()
+            .eq('id', messageId)
+            .eq('sender_id', this.currentUserId);
+
+        if (error) {
+            alert('Impossible de supprimer ce message.');
         }
     },
 
@@ -201,7 +313,7 @@ const MessagesModule = {
         });
     },
 
-    async sendMessage() {
+    async sendTextMessage() {
         if (this.isSending || !this.activeConversationId) return;
 
         const input = document.getElementById('message-input');
@@ -217,14 +329,17 @@ const MessagesModule = {
         errorBanner.classList.add('hidden');
 
         try {
+            const payload = {
+                conversation_id: this.activeConversationId,
+                sender_id: this.currentUserId,
+                content: content,
+                type: 'text',
+                reply_to_id: this.replyTargetMessage ? this.replyTargetMessage.id : null
+            };
+
             const { data, error } = await supabaseClient
                 .from('messages')
-                .insert({
-                    conversation_id: this.activeConversationId,
-                    sender_id: this.currentUserId,
-                    content: content,
-                    type: 'text'
-                })
+                .insert(payload)
                 .select()
                 .single();
 
@@ -232,8 +347,8 @@ const MessagesModule = {
 
             input.value = '';
             input.style.height = 'auto';
+            this.clearReplyTarget();
 
-            // Ajout immédiat si Realtime ne l'a pas encore inséré
             if (!this.messages.some((m) => m.id === data.id)) {
                 this.messages.push(data);
                 this.appendMessageElement(data, true);
@@ -246,6 +361,64 @@ const MessagesModule = {
             sendBtn.disabled = input.value.trim().length === 0;
             input.focus();
         }
+    },
+
+    async sendMediaMessage({ type, mediaUrl, meta = {} }) {
+        if (!this.activeConversationId) return;
+
+        const { data, error } = await supabaseClient
+            .from('messages')
+            .insert({
+                conversation_id: this.activeConversationId,
+                sender_id: this.currentUserId,
+                content: '',
+                type,
+                media_url: mediaUrl,
+                media_meta: meta,
+                reply_to_id: this.replyTargetMessage ? this.replyTargetMessage.id : null
+            })
+            .select()
+            .single();
+
+        if (error) {
+            alert("Erreur lors de l'envoi du média.");
+            return;
+        }
+
+        this.clearReplyTarget();
+
+        if (!this.messages.some((m) => m.id === data.id)) {
+            this.messages.push(data);
+            this.appendMessageElement(data, true);
+        }
+    },
+
+    async sendImageFile(file) {
+        if (file.size > 5 * 1024 * 1024) {
+            alert("L'image dépasse 5 Mo.");
+            return;
+        }
+        const ext = file.name.split('.').pop().toLowerCase() || 'jpg';
+        const path = `${this.currentUserId}/img_${Date.now()}.${ext}`;
+
+        const { error: upErr } = await supabaseClient.storage
+            .from('chat-media')
+            .upload(path, file);
+
+        if (upErr) {
+            alert("Impossible d'envoyer la photo.");
+            return;
+        }
+
+        const { data: pub } = supabaseClient.storage
+            .from('chat-media')
+            .getPublicUrl(path);
+
+        await this.sendMediaMessage({
+            type: 'image',
+            mediaUrl: pub.publicUrl,
+            meta: { name: file.name }
+        });
     },
 
     async markMessagesAsRead(conversationId) {
@@ -300,10 +473,31 @@ const MessagesModule = {
                     if (idx !== -1) {
                         this.messages[idx] = updated;
                     }
-                    const indicator = document.querySelector(`[data-read-id="${updated.id}"]`);
-                    if (indicator && updated.is_read) {
-                        indicator.textContent = '✓✓';
+                    const row = document.querySelector(`[data-message-id="${updated.id}"]`);
+                    if (row) {
+                        const textBody = row.querySelector('.msg-text-body');
+                        if (textBody && updated.type === 'text') {
+                            textBody.textContent = updated.content;
+                        }
+                        const indicator = row.querySelector(`[data-read-id="${updated.id}"]`);
+                        if (indicator && updated.is_read) {
+                            indicator.textContent = '✓✓';
+                        }
                     }
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'messages',
+                    filter: `conversation_id=eq.${conversationId}`
+                },
+                (payload) => {
+                    const deletedId = payload.old.id;
+                    this.messages = this.messages.filter((m) => m.id !== deletedId);
+                    document.querySelector(`[data-message-id="${deletedId}"]`)?.remove();
                 }
             )
             .subscribe();
