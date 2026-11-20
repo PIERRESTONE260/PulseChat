@@ -1,5 +1,6 @@
 /**
- * GESTION DES MESSAGES EN TEMPS RÉEL V2 (Texte, Audio, Sticker, GIF, Image, Citation, Édition, Suppression)
+ * GESTION DES MESSAGES EN TEMPS RÉEL V2
+ * (Texte, Audio, Sticker, GIF, Image, Citation, Édition, Suppression & Indicateur "en train d'écrire...")
  */
 
 const MessagesModule = {
@@ -12,6 +13,9 @@ const MessagesModule = {
     isSending: false,
     lastRenderedDate: null,
     replyTargetMessage: null,
+    typingTimeout: null,
+    peerTypingTimeout: null,
+    isPeerTyping: false,
 
     init(userId) {
         this.currentUserId = userId;
@@ -29,6 +33,16 @@ const MessagesModule = {
 
             input.style.height = 'auto';
             input.style.height = `${Math.min(input.scrollHeight, 130)}px`;
+
+            if (hasText) {
+                this.broadcastTyping(true);
+            } else {
+                this.broadcastTyping(false);
+            }
+        });
+
+        input.addEventListener('blur', () => {
+            this.broadcastTyping(false);
         });
 
         input.addEventListener('keydown', (e) => {
@@ -42,6 +56,7 @@ const MessagesModule = {
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            this.broadcastTyping(false);
             await this.sendTextMessage();
         });
 
@@ -65,6 +80,42 @@ const MessagesModule = {
                     imageInput.value = '';
                 }
             });
+        }
+    },
+
+    broadcastTyping(isTyping) {
+        if (!this.messagesChannel || !this.activeConversationId || !this.currentUserId) return;
+
+        clearTimeout(this.typingTimeout);
+
+        this.messagesChannel.send({
+            type: 'broadcast',
+            event: 'typing',
+            payload: {
+                user_id: this.currentUserId,
+                is_typing: isTyping
+            }
+        });
+
+        if (isTyping) {
+            this.typingTimeout = setTimeout(() => {
+                this.broadcastTyping(false);
+            }, 1800);
+        }
+    },
+
+    handlePeerTypingEvent(payload) {
+        if (!payload || payload.user_id === this.currentUserId) return;
+
+        clearTimeout(this.peerTypingTimeout);
+        this.isPeerTyping = Boolean(payload.is_typing);
+        AppController.updateActivePeerHeaderStatus();
+
+        if (this.isPeerTyping) {
+            this.peerTypingTimeout = setTimeout(() => {
+                this.isPeerTyping = false;
+                AppController.updateActivePeerHeaderStatus();
+            }, 2400);
         }
     },
 
@@ -99,6 +150,8 @@ const MessagesModule = {
         this.messages = [];
         this.hasMoreOlder = false;
         this.lastRenderedDate = null;
+        this.isPeerTyping = false;
+        clearTimeout(this.peerTypingTimeout);
         this.clearReplyTarget();
 
         const listEl = document.getElementById('messages-list');
@@ -440,6 +493,13 @@ const MessagesModule = {
         this.messagesChannel = supabaseClient
             .channel(`chat-room-${conversationId}`)
             .on(
+                'broadcast',
+                { event: 'typing' },
+                ({ payload }) => {
+                    this.handlePeerTypingEvent(payload);
+                }
+            )
+            .on(
                 'postgres_changes',
                 {
                     event: 'INSERT',
@@ -449,6 +509,11 @@ const MessagesModule = {
                 },
                 async (payload) => {
                     const newMsg = payload.new;
+                    if (newMsg.sender_id !== this.currentUserId) {
+                        this.isPeerTyping = false;
+                        AppController.updateActivePeerHeaderStatus();
+                    }
+
                     if (!this.messages.some((m) => m.id === newMsg.id)) {
                         this.messages.push(newMsg);
                         this.appendMessageElement(newMsg, true);
@@ -504,6 +569,9 @@ const MessagesModule = {
     },
 
     cleanup() {
+        this.broadcastTyping(false);
+        clearTimeout(this.typingTimeout);
+        clearTimeout(this.peerTypingTimeout);
         if (this.messagesChannel) {
             supabaseClient.removeChannel(this.messagesChannel);
             this.messagesChannel = null;

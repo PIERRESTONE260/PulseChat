@@ -8,6 +8,9 @@ const AppController = {
 
     async init() {
         try {
+            // Appliquer le thème sauvegardé dès le démarrage
+            this.initTheme();
+
             // 1. Vérifier la session active
             const { data: { session }, error } = await supabaseClient.auth.getSession();
             if (error || !session) {
@@ -51,7 +54,38 @@ const AppController = {
         }
     },
 
+    initTheme() {
+        const savedTheme = localStorage.getItem('pulsechat_theme') || 'light';
+        this.applyTheme(savedTheme);
+    },
+
+    applyTheme(theme) {
+        const isDark = theme === 'dark';
+        if (isDark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+        localStorage.setItem('pulsechat_theme', isDark ? 'dark' : 'light');
+
+        const toggleBtn = document.getElementById('btn-toggle-theme');
+        if (toggleBtn) {
+            toggleBtn.textContent = isDark ? '☀️' : '🌙';
+            toggleBtn.title = isDark ? 'Passer en mode clair' : 'Passer en mode sombre';
+        }
+    },
+
+    toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        this.applyTheme(current === 'dark' ? 'light' : 'dark');
+    },
+
     bindUIEvents() {
+        // Bascule Mode Sombre / Clair
+        document.getElementById('btn-toggle-theme')?.addEventListener('click', () => {
+            this.toggleTheme();
+        });
+
         // Déconnexion réelle
         document.getElementById('btn-logout').addEventListener('click', async () => {
             await PresenceModule.cleanup();
@@ -167,14 +201,12 @@ const AppController = {
 
     async startConversationWithUser(peerProfile) {
         try {
-            // Appel de la RPC atomique qui récupère ou crée la conversation privée unique
             const { data: conversationId, error } = await supabaseClient.rpc('get_or_create_direct_conversation', {
                 target_user_id: peerProfile.id
             });
 
             if (error) throw error;
 
-            // Vider la recherche et revenir aux discussions
             document.getElementById('user-search-input').value = '';
             document.getElementById('btn-clear-search').classList.add('hidden');
             this.switchSidebarTab('conversations');
@@ -189,14 +221,10 @@ const AppController = {
     async openConversation(conversationId, peerProfile) {
         this.activePeer = peerProfile;
 
-        // Afficher la zone active et masquer l'écran d'accueil
         document.getElementById('chat-welcome').classList.add('hidden');
         document.getElementById('chat-active').classList.remove('hidden');
-
-        // Navigation mobile
         document.getElementById('app-shell').classList.add('mobile-chat-open');
 
-        // Mettre à jour l'en-tête du correspondant
         document.getElementById('peer-fullname').textContent = peerProfile.full_name;
         AppUtils.renderAvatar(
             document.getElementById('peer-avatar'),
@@ -206,10 +234,8 @@ const AppController = {
         );
         this.updateActivePeerHeaderStatus();
 
-        // Marquer la conversation active dans la barre latérale
         ConversationsModule.setActiveConversation(conversationId);
 
-        // Charger et souscrire aux messages
         await MessagesModule.openConversationMessages(conversationId);
         document.getElementById('message-input').focus();
     },
@@ -221,6 +247,13 @@ const AppController = {
         const textEl = document.getElementById('peer-status-text');
 
         dotEl.className = `status-dot ${isOnline ? 'status-online' : 'status-offline'}`;
+
+        if (MessagesModule.isPeerTyping) {
+            textEl.textContent = 'En train d’écrire…';
+            textEl.className = 'peer-status typing';
+            return;
+        }
+
         if (isOnline) {
             textEl.textContent = 'En ligne';
             textEl.className = 'peer-status online';
