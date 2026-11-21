@@ -15,7 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="app-body">
-    <!-- Écran de chargement initial de session -->
+    <!-- Écran de chargement initial -->
     <div id="global-loader" class="global-loader">
         <div class="loader-content">
             <div class="spinner-large"></div>
@@ -23,17 +23,16 @@
         </div>
     </div>
 
-    <!-- Bannière d'état réseau / erreur globale -->
+    <!-- Bannière réseau -->
     <div id="connection-banner" class="connection-banner hidden" role="status">
         Connexion interrompue. Tentative de reconnexion en cours...
     </div>
 
-    <!-- Conteneur principal de l'application -->
+    <!-- Conteneur principal -->
     <div id="app-shell" class="app-shell hidden">
         
         <!-- A. BARRE LATÉRALE -->
         <aside class="sidebar" id="sidebar">
-            <!-- En-tête Logo & Actions rapides -->
             <header class="sidebar-header">
                 <div class="app-brand">
                     <div class="brand-icon">
@@ -45,13 +44,30 @@
                 </div>
 
                 <div class="sidebar-actions">
-                    <button type="button" id="btn-toggle-theme" class="icon-btn" title="Passer en mode sombre" aria-label="Changer le thème">🌙</button>
+                    <button type="button" id="btn-toggle-theme" class="icon-btn" title="Changer le thème" aria-label="Changer le thème">
+                        <svg id="icon-theme-moon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                        <svg id="icon-theme-sun" class="hidden" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </button>
+
                     <button type="button" id="btn-open-profile" class="icon-btn" title="Paramètres du profil" aria-label="Paramètres du profil">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                         </svg>
                     </button>
+
                     <button type="button" id="btn-logout" class="icon-btn icon-btn-danger" title="Se déconnecter" aria-label="Se déconnecter">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -75,7 +91,7 @@
                 </div>
             </div>
 
-            <!-- Barre de recherche d'utilisateurs -->
+            <!-- Recherche -->
             <div class="search-section">
                 <div class="search-input-box">
                     <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -87,19 +103,14 @@
                 </div>
             </div>
 
-            <!-- Onglets Discussions / Résultats de recherche -->
+            <!-- Onglets -->
             <div class="sidebar-tabs">
-                <button type="button" class="tab-btn active" data-tab="conversations" id="tab-conversations">
-                    Discussions
-                </button>
-                <button type="button" class="tab-btn" data-tab="directory" id="tab-directory">
-                    Utilisateurs
-                </button>
+                <button type="button" class="tab-btn active" data-tab="conversations" id="tab-conversations">Discussions</button>
+                <button type="button" class="tab-btn" data-tab="directory" id="tab-directory">Utilisateurs</button>
             </div>
 
-            <!-- Liste dynamique (Conversations ou Utilisateurs) -->
+            <!-- Liste dynamique -->
             <div class="sidebar-list-container">
-                <!-- Vue Conversations -->
                 <div id="conversations-view" class="list-panel">
                     <div id="conversations-loading" class="panel-state">
                         <div class="spinner-sm"></div>
@@ -112,7 +123,6 @@
                     <ul id="conversations-list" class="item-list"></ul>
                 </div>
 
-                <!-- Vue Recherche / Annuaire Utilisateurs -->
                 <div id="users-view" class="list-panel hidden">
                     <div id="users-loading" class="panel-state hidden">
                         <div class="spinner-sm"></div>
@@ -130,7 +140,7 @@
         <!-- B & C. ZONE PRINCIPALE DE CONVERSATION -->
         <main class="chat-area" id="chat-area">
             
-            <!-- C. État initial (Aucune conversation sélectionnée) -->
+            <!-- C. État initial -->
             <div id="chat-welcome" class="chat-welcome">
                 <div class="welcome-card">
                     <div class="welcome-illustration">
@@ -140,9 +150,7 @@
                     </div>
                     <h2>Bienvenue sur PulseChat</h2>
                     <p>Sélectionnez une discussion dans la barre latérale ou recherchez un utilisateur pour démarrer une conversation privée instantanée.</p>
-                    <button type="button" id="btn-welcome-search" class="btn btn-primary">
-                        Rechercher une personne
-                    </button>
+                    <button type="button" id="btn-welcome-search" class="btn btn-primary">Rechercher une personne</button>
                 </div>
             </div>
 
@@ -182,7 +190,7 @@
                     </div>
                 </header>
 
-                <!-- Zone d'affichage des messages -->
+                <!-- Zone des messages -->
                 <div class="messages-container" id="messages-container">
                     <div id="load-older-wrapper" class="load-older-wrapper hidden">
                         <button type="button" id="btn-load-older" class="btn btn-secondary btn-sm">
@@ -203,7 +211,7 @@
                     <div id="messages-list" class="messages-list"></div>
                 </div>
 
-                <!-- Zone d'erreur d'envoi -->
+                <!-- Bannière erreur envoi -->
                 <div id="send-error-banner" class="send-error-banner hidden">
                     <span id="send-error-text">Impossible d'envoyer le message.</span>
                     <button type="button" id="btn-dismiss-send-error">&times;</button>
@@ -215,55 +223,168 @@
                         <span>Réponse à :</span>
                         <strong id="reply-preview-text"></strong>
                     </div>
-                    <button type="button" id="btn-cancel-reply" aria-label="Annuler la réponse">&times;</button>
+                    <button type="button" id="btn-cancel-reply" class="icon-btn" aria-label="Annuler la réponse">&times;</button>
                 </div>
 
-                <!-- Barre d'enregistrement audio -->
-                <div id="audio-recorder-bar" class="audio-recorder-bar hidden">
-                    <span class="rec-dot"></span>
-                    <span id="audio-timer">00:00</span>
-                    <audio id="audio-preview-player" controls class="hidden"></audio>
-                    <div class="audio-recorder-actions">
-                        <button type="button" id="btn-stop-audio" class="btn btn-secondary btn-sm">Stop</button>
-                        <button type="button" id="btn-send-audio" class="btn btn-primary btn-sm hidden">Envoyer vocal</button>
-                        <button type="button" id="btn-cancel-audio" class="icon-btn icon-btn-danger" title="Annuler">&times;</button>
+                <!-- TIROIR PIÈCES JOINTES STYLE WHATSAPP (Galerie, Caméra, Document) -->
+                <div id="attachment-drawer" class="attachment-drawer hidden">
+                    <div class="attachment-handle"></div>
+                    <div class="attachment-grid">
+                        <label for="chat-gallery-input" class="attachment-option">
+                            <div class="attachment-circle color-gallery">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </div>
+                            <span>Galerie</span>
+                        </label>
+                        <input type="file" id="chat-gallery-input" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" class="hidden">
+
+                        <label for="chat-camera-input" class="attachment-option">
+                            <div class="attachment-circle color-camera">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                    <circle cx="12" cy="13" r="4"></circle>
+                                </svg>
+                            </div>
+                            <span>Caméra</span>
+                        </label>
+                        <input type="file" id="chat-camera-input" accept="image/*,video/*" capture="environment" class="hidden">
+
+                        <label for="chat-doc-input" class="attachment-option">
+                            <div class="attachment-circle color-doc">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                            </div>
+                            <span>Document</span>
+                        </label>
+                        <input type="file" id="chat-doc-input" accept=".pdf,.doc,.docx,.txt,.zip" class="hidden">
                     </div>
                 </div>
 
-                <!-- Popover Stickers -->
-                <div id="sticker-picker-popover" class="media-popover hidden">
-                    <div class="popover-header">
-                        <span>Stickers</span>
-                        <button type="button" id="btn-open-sticker-creator" class="btn btn-primary btn-sm">+ Créer un sticker</button>
+                <!-- PANNEAU UNIFIÉ ÉMOJIS, GIF & STICKERS (AVEC FAVORIS) -->
+                <div id="expression-picker" class="expression-picker hidden">
+                    <div class="expression-tabs">
+                        <button type="button" class="expr-tab active" data-expr="emojis">Émojis</button>
+                        <button type="button" class="expr-tab" data-expr="gifs">GIF</button>
+                        <button type="button" class="expr-tab" data-expr="stickers">Stickers</button>
                     </div>
-                    <div id="stickers-grid" class="media-grid"></div>
+
+                    <!-- Onglet Émojis -->
+                    <div id="expr-panel-emojis" class="expr-panel">
+                        <div id="emojis-grid" class="emojis-grid"></div>
+                    </div>
+
+                    <!-- Onglet GIF -->
+                    <div id="expr-panel-gifs" class="expr-panel hidden">
+                        <div class="popover-header">
+                            <span>Mes GIF & Favoris</span>
+                            <button type="button" id="btn-open-gif-creator" class="btn btn-primary btn-sm">+ Créer un GIF</button>
+                        </div>
+                        <div id="gifs-grid" class="media-grid"></div>
+                    </div>
+
+                    <!-- Onglet Stickers -->
+                    <div id="expr-panel-stickers" class="expr-panel hidden">
+                        <div class="popover-header">
+                            <span>Mes Stickers & Favoris</span>
+                            <button type="button" id="btn-open-sticker-creator" class="btn btn-primary btn-sm">+ Créer un sticker</button>
+                        </div>
+                        <div id="stickers-grid" class="media-grid"></div>
+                    </div>
                 </div>
 
-                <!-- Popover GIF -->
-                <div id="gif-picker-popover" class="media-popover hidden">
-                    <div class="popover-header">
-                        <span>GIF</span>
-                        <button type="button" id="btn-open-gif-creator" class="btn btn-primary btn-sm">+ Créer un GIF</button>
+                <!-- BARRE D'ENREGISTREMENT VOCAL FAÇON FACEBOOK MESSENGER -->
+                <div id="messenger-audio-bar" class="messenger-audio-bar hidden">
+                    <button type="button" id="btn-cancel-audio" class="audio-trash-btn" title="Supprimer le vocal" aria-label="Supprimer le vocal">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+
+                    <div class="audio-wave-pill">
+                        <button type="button" id="btn-pause-resume-audio" class="audio-ctrl-btn" title="Pause / Reprendre">
+                            <svg id="icon-audio-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+                                <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+                            </svg>
+                            <svg id="icon-audio-play" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                        </button>
+                        <div class="audio-waveform" id="audio-waveform">
+                            <span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                        <span id="audio-timer" class="audio-timer-badge">0:00</span>
                     </div>
-                    <div id="gifs-grid" class="media-grid"></div>
+
+                    <button type="button" id="btn-send-audio" class="wa-circle-btn" title="Envoyer le message vocal" aria-label="Envoyer le message vocal">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
                 </div>
 
-                <!-- Formulaire de saisie -->
-                <footer class="chat-footer">
-                    <form id="message-form" class="message-form">
-                        <button type="button" id="btn-toggle-stickers" class="icon-btn" title="Stickers" aria-label="Stickers">🏷️</button>
-                        <button type="button" id="btn-toggle-gifs" class="icon-btn" title="GIF" aria-label="GIF">🎞️</button>
-                        <label for="chat-image-input" class="icon-btn" title="Envoyer une photo" aria-label="Envoyer une photo">📷</label>
-                        <input type="file" id="chat-image-input" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden">
-                        <button type="button" id="btn-record-audio" class="icon-btn" title="Message vocal" aria-label="Message vocal">🎤</button>
-                        <textarea 
-                            id="message-input" 
-                            rows="1" 
-                            maxlength="2000" 
-                            placeholder="Écrivez votre message..." 
-                            aria-label="Écrivez votre message"></textarea>
-                        <button type="submit" id="btn-send-message" class="btn-send" disabled aria-label="Envoyer le message">
-                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <!-- PIED DE CONVERSATION FAÇON WHATSAPP -->
+                <footer class="chat-footer" id="chat-footer-bar">
+                    <form id="message-form" class="wa-composer-row">
+                        <div class="wa-input-pill">
+                            <!-- Icône Sticker / Émoji / GIF (identique à la capture WhatsApp) -->
+                            <button type="button" id="btn-toggle-expressions" class="wa-pill-icon" title="Émojis, GIF et Stickers" aria-label="Émojis, GIF et Stickers">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"></path>
+                                    <path d="M15 3v6h6"></path>
+                                    <circle cx="9" cy="10" r="1" fill="currentColor"></circle>
+                                    <circle cx="15" cy="10" r="1" fill="currentColor"></circle>
+                                    <path d="M9 14c.8 1.2 2 1.8 3 1.8s2.2-.6 3-1.8"></path>
+                                </svg>
+                            </button>
+
+                            <textarea 
+                                id="message-input" 
+                                rows="1" 
+                                maxlength="2000" 
+                                placeholder="Message" 
+                                aria-label="Message"></textarea>
+
+                            <!-- Icône Trombone (Pièces jointes) -->
+                            <button type="button" id="btn-toggle-attachments" class="wa-pill-icon" title="Joindre un fichier" aria-label="Joindre un fichier">
+                                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                                </svg>
+                            </button>
+
+                            <!-- Icône Appareil Photo rapide -->
+                            <label for="chat-quick-photo-input" class="wa-pill-icon" title="Envoyer une photo ou vidéo" aria-label="Envoyer une photo ou vidéo">
+                                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                    <circle cx="12" cy="13" r="4"></circle>
+                                </svg>
+                            </label>
+                            <input type="file" id="chat-quick-photo-input" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" class="hidden">
+                        </div>
+
+                        <!-- Bouton circulaire droit : Micro (si vide) ou Envoyer (si texte) -->
+                        <button type="button" id="btn-record-audio" class="wa-circle-btn" title="Enregistrer un message vocal" aria-label="Enregistrer un message vocal">
+                            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="22"></line>
+                            </svg>
+                        </button>
+
+                        <button type="submit" id="btn-send-message" class="wa-circle-btn hidden" title="Envoyer" aria-label="Envoyer">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="22" y1="2" x2="11" y2="13"></line>
                                 <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                             </svg>
@@ -272,6 +393,38 @@
                 </footer>
             </div>
         </main>
+    </div>
+
+    <!-- MODALE APERÇU PHOTO / VIDÉO AVANT ENVOI (AVEC LÉGENDE) -->
+    <div id="modal-media-preview" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+        <div class="modal-card media-preview-card">
+            <div class="modal-header">
+                <h3>Aperçu avant envoi</h3>
+                <button type="button" class="icon-btn modal-close" data-close="modal-media-preview" aria-label="Fermer">&times;</button>
+            </div>
+            <div class="modal-body media-preview-body">
+                <div class="media-preview-stage">
+                    <img id="preview-stage-img" class="hidden" alt="Aperçu photo">
+                    <video id="preview-stage-video" class="hidden" controls playsinline></video>
+                    <div id="preview-stage-doc" class="hidden doc-preview-box">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <span id="preview-doc-name">document.pdf</span>
+                    </div>
+                </div>
+                <div class="media-caption-bar">
+                    <input type="text" id="media-caption-input" maxlength="500" placeholder="Ajouter une légende ou un message...">
+                    <button type="button" id="btn-confirm-send-media" class="wa-circle-btn" title="Envoyer">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- MODALE 1 : PARAMÈTRES DU PROFIL UTILISATEUR -->
@@ -290,9 +443,7 @@
                         <div id="modal-profile-initials" class="avatar-initials avatar-lg">--</div>
                     </div>
                     <div class="avatar-upload-controls">
-                        <label for="avatar-file-input" class="btn btn-secondary btn-sm">
-                            Changer la photo
-                        </label>
+                        <label for="avatar-file-input" class="btn btn-secondary btn-sm">Changer la photo</label>
                         <input type="file" id="avatar-file-input" accept="image/png, image/jpeg, image/webp" class="hidden">
                         <small>JPG, PNG ou WebP (Max. 2 Mo)</small>
                     </div>

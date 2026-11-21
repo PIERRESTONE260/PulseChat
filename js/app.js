@@ -68,11 +68,8 @@ const AppController = {
         }
         localStorage.setItem('pulsechat_theme', isDark ? 'dark' : 'light');
 
-        const toggleBtn = document.getElementById('btn-toggle-theme');
-        if (toggleBtn) {
-            toggleBtn.textContent = isDark ? '☀️' : '🌙';
-            toggleBtn.title = isDark ? 'Passer en mode clair' : 'Passer en mode sombre';
-        }
+        document.getElementById('icon-theme-moon')?.classList.toggle('hidden', isDark);
+        document.getElementById('icon-theme-sun')?.classList.toggle('hidden', !isDark);
     },
 
     toggleTheme() {
@@ -156,15 +153,26 @@ const AppController = {
             if (this.activePeer) ProfileModule.openPeerProfileModal(this.activePeer);
         });
 
-        // Popovers Stickers & GIF
-        document.getElementById('btn-toggle-stickers')?.addEventListener('click', () => {
-            document.getElementById('gif-picker-popover')?.classList.add('hidden');
-            document.getElementById('sticker-picker-popover')?.classList.toggle('hidden');
+        // Panneau unifié Émojis / GIF / Stickers
+        document.getElementById('btn-toggle-expressions')?.addEventListener('click', () => {
+            document.getElementById('attachment-drawer')?.classList.add('hidden');
+            document.getElementById('expression-picker')?.classList.toggle('hidden');
         });
 
-        document.getElementById('btn-toggle-gifs')?.addEventListener('click', () => {
-            document.getElementById('sticker-picker-popover')?.classList.add('hidden');
-            document.getElementById('gif-picker-popover')?.classList.toggle('hidden');
+        document.querySelectorAll('.expr-tab').forEach((tab) => {
+            tab.addEventListener('click', () => {
+                const target = tab.getAttribute('data-expr');
+                document.querySelectorAll('.expr-tab').forEach((t) => t.classList.toggle('active', t === tab));
+                document.querySelectorAll('.expr-panel').forEach((panel) => {
+                    panel.classList.toggle('hidden', panel.id !== `expr-panel-${target}`);
+                });
+            });
+        });
+
+        // Tiroir pièces jointes (Galerie, Caméra, Document)
+        document.getElementById('btn-toggle-attachments')?.addEventListener('click', () => {
+            document.getElementById('expression-picker')?.classList.add('hidden');
+            document.getElementById('attachment-drawer')?.classList.toggle('hidden');
         });
 
         // Mise à jour dynamique des statuts en ligne

@@ -1,6 +1,6 @@
 /**
  * GESTION DES MESSAGES EN TEMPS RÉEL V2
- * (Texte, Audio, Sticker, GIF, Image, Citation, Édition, Suppression & Indicateur "en train d'écrire...")
+ * (Texte, Audio, Photo, Vidéo, Document, Sticker, GIF, Citation, Édition, Suppression, Favoris & "En train d'écrire...")
  */
 
 const MessagesModule = {
@@ -22,23 +22,22 @@ const MessagesModule = {
         const form = document.getElementById('message-form');
         const input = document.getElementById('message-input');
         const sendBtn = document.getElementById('btn-send-message');
+        const micBtn = document.getElementById('btn-record-audio');
         const loadOlderBtn = document.getElementById('btn-load-older');
         const dismissErrBtn = document.getElementById('btn-dismiss-send-error');
         const cancelReplyBtn = document.getElementById('btn-cancel-reply');
-        const imageInput = document.getElementById('chat-image-input');
 
         input.addEventListener('input', () => {
             const hasText = input.value.trim().length > 0;
+
             sendBtn.disabled = !hasText || this.isSending;
+            sendBtn.classList.toggle('hidden', !hasText);
+            micBtn?.classList.toggle('hidden', hasText);
 
             input.style.height = 'auto';
-            input.style.height = `${Math.min(input.scrollHeight, 130)}px`;
+            input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
 
-            if (hasText) {
-                this.broadcastTyping(true);
-            } else {
-                this.broadcastTyping(false);
-            }
+            this.broadcastTyping(hasText);
         });
 
         input.addEventListener('blur', () => {
@@ -70,16 +69,6 @@ const MessagesModule = {
 
         if (cancelReplyBtn) {
             cancelReplyBtn.addEventListener('click', () => this.clearReplyTarget());
-        }
-
-        if (imageInput) {
-            imageInput.addEventListener('change', async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                    await this.sendImageFile(file);
-                    imageInput.value = '';
-                }
-            });
         }
     },
 
@@ -128,12 +117,16 @@ const MessagesModule = {
         const summary = msg.type === 'text'
             ? msg.content
             : msg.type === 'audio'
-                ? '🎤 Message vocal'
+                ? 'Message vocal'
                 : msg.type === 'sticker'
-                    ? '🏷️ Sticker'
+                    ? 'Sticker'
                     : msg.type === 'gif'
-                        ? '🎞️ GIF'
-                        : '📷 Photo';
+                        ? 'GIF'
+                        : msg.type === 'video'
+                            ? 'Vidéo'
+                            : msg.type === 'file'
+                                ? 'Document'
+                                : 'Photo';
 
         textEl.textContent = summary;
         bar.classList.remove('hidden');
@@ -247,16 +240,35 @@ const MessagesModule = {
             replyHtml = `<div class="reply-quote">${UsersModule.escapeHtml(parentText)}</div>`;
         }
 
+        const captionHtml = msg.content
+            ? `<div class="media-caption-text">${UsersModule.escapeHtml(msg.content)}</div>`
+            : '';
+
         if (msg.type === 'sticker') {
             return `${replyHtml}<img src="${msg.media_url}" alt="Sticker" class="sticker-bubble-img">`;
         }
 
         if (msg.type === 'gif') {
-            return `${replyHtml}<img src="${msg.media_url}" alt="GIF" class="gif-bubble-img">`;
+            return `${replyHtml}<img src="${msg.media_url}" alt="GIF" class="gif-bubble-img">${captionHtml}`;
         }
 
         if (msg.type === 'image') {
-            return `${replyHtml}<img src="${msg.media_url}" alt="Photo" class="chat-bubble-img">`;
+            return `${replyHtml}<img src="${msg.media_url}" alt="Photo" class="chat-bubble-img">${captionHtml}`;
+        }
+
+        if (msg.type === 'video') {
+            return `${replyHtml}<video controls playsinline preload="metadata" src="${msg.media_url}" class="chat-bubble-video"></video>${captionHtml}`;
+        }
+
+        if (msg.type === 'file') {
+            const fileName = msg.media_meta?.name || 'Document';
+            return `${replyHtml}<a href="${msg.media_url}" target="_blank" rel="noopener" class="chat-file-link">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <span>${UsersModule.escapeHtml(fileName)}</span>
+            </a>${captionHtml}`;
         }
 
         if (msg.type === 'audio') {
@@ -272,7 +284,6 @@ const MessagesModule = {
         const container = document.getElementById('messages-container');
 
         emptyEl.classList.add('hidden');
-
         const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
 
         const dateLabel = AppUtils.formatDateDivider(msg.created_at);
@@ -286,7 +297,7 @@ const MessagesModule = {
 
         const isMine = msg.sender_id === this.currentUserId;
         const row = document.createElement('div');
-        const isMediaOnly = msg.type === 'sticker' || msg.type === 'gif';
+        const isMediaOnly = msg.type === 'sticker' || (msg.type === 'gif' && !msg.content);
         row.className = `message-row ${isMine ? 'sent' : 'received'} ${isMediaOnly ? 'media-only' : ''}`;
         row.dataset.messageId = msg.id;
 
@@ -295,12 +306,33 @@ const MessagesModule = {
             : '';
 
         const editedLabel = msg.edited_at ? `<span class="edited-tag">modifié</span>` : '';
+        const canFav = (msg.type === 'sticker' || msg.type === 'gif') && msg.media_url;
 
         const actionsHtml = `
             <div class="msg-actions">
-                <button type="button" class="msg-action-btn reply-btn" title="Répondre">↩</button>
-                ${isMine && msg.type === 'text' ? `<button type="button" class="msg-action-btn edit-btn" title="Modifier">✎</button>` : ''}
-                ${isMine ? `<button type="button" class="msg-action-btn delete-btn" title="Supprimer">🗑</button>` : ''}
+                ${canFav ? `<button type="button" class="msg-action-btn fav-btn" title="Ajouter aux favoris">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                </button>` : ''}
+                <button type="button" class="msg-action-btn reply-btn" title="Répondre">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <polyline points="9 14 4 9 9 4"></polyline>
+                        <path d="M20 20v-7a4 4 0 0 0-4-4H4"></path>
+                    </svg>
+                </button>
+                ${isMine && msg.type === 'text' ? `<button type="button" class="msg-action-btn edit-btn" title="Modifier">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>` : ''}
+                ${isMine ? `<button type="button" class="msg-action-btn delete-btn" title="Supprimer">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                    </svg>
+                </button>` : ''}
             </div>
         `;
 
@@ -316,6 +348,14 @@ const MessagesModule = {
             </div>
         `;
 
+        row.querySelector('.fav-btn')?.addEventListener('click', async (e) => {
+            const btn = e.currentTarget;
+            const ok = await MediaModule.addToFavorites(msg.type, msg.media_url, msg.media_meta?.label || '');
+            if (ok) {
+                btn.classList.add('favorited');
+                btn.title = 'Ajouté aux favoris';
+            }
+        });
         row.querySelector('.reply-btn')?.addEventListener('click', () => this.setReplyTarget(msg));
         row.querySelector('.edit-btn')?.addEventListener('click', () => this.editMessage(msg));
         row.querySelector('.delete-btn')?.addEventListener('click', () => this.deleteMessage(msg.id));
@@ -371,6 +411,7 @@ const MessagesModule = {
 
         const input = document.getElementById('message-input');
         const sendBtn = document.getElementById('btn-send-message');
+        const micBtn = document.getElementById('btn-record-audio');
         const errorBanner = document.getElementById('send-error-banner');
         const errorText = document.getElementById('send-error-text');
 
@@ -400,6 +441,8 @@ const MessagesModule = {
 
             input.value = '';
             input.style.height = 'auto';
+            sendBtn.classList.add('hidden');
+            micBtn?.classList.remove('hidden');
             this.clearReplyTarget();
 
             if (!this.messages.some((m) => m.id === data.id)) {
@@ -416,7 +459,7 @@ const MessagesModule = {
         }
     },
 
-    async sendMediaMessage({ type, mediaUrl, meta = {} }) {
+    async sendMediaMessage({ type, mediaUrl, caption = '', meta = {} }) {
         if (!this.activeConversationId) return;
 
         const { data, error } = await supabaseClient
@@ -424,7 +467,7 @@ const MessagesModule = {
             .insert({
                 conversation_id: this.activeConversationId,
                 sender_id: this.currentUserId,
-                content: '',
+                content: caption,
                 type,
                 media_url: mediaUrl,
                 media_meta: meta,
@@ -444,34 +487,6 @@ const MessagesModule = {
             this.messages.push(data);
             this.appendMessageElement(data, true);
         }
-    },
-
-    async sendImageFile(file) {
-        if (file.size > 5 * 1024 * 1024) {
-            alert("L'image dépasse 5 Mo.");
-            return;
-        }
-        const ext = file.name.split('.').pop().toLowerCase() || 'jpg';
-        const path = `${this.currentUserId}/img_${Date.now()}.${ext}`;
-
-        const { error: upErr } = await supabaseClient.storage
-            .from('chat-media')
-            .upload(path, file);
-
-        if (upErr) {
-            alert("Impossible d'envoyer la photo.");
-            return;
-        }
-
-        const { data: pub } = supabaseClient.storage
-            .from('chat-media')
-            .getPublicUrl(path);
-
-        await this.sendMediaMessage({
-            type: 'image',
-            mediaUrl: pub.publicUrl,
-            meta: { name: file.name }
-        });
     },
 
     async markMessagesAsRead(conversationId) {

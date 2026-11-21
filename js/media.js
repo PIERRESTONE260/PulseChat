@@ -1,180 +1,408 @@
 /**
- * MODULE MULTIMÉDIA V2 : AUDIO, STICKERS PERSONNALISÉS, GIF & CRÉATEUR DE GIF
+ * MODULE MULTIMÉDIA V2 :
+ * - Audio façon Facebook Messenger (Pause/Reprendre, onde animée, Corbeille, Envoi direct)
+ * - Émojis, Stickers & GIF avec mise en favoris des stickers/GIF reçus
+ * - Aperçu photo / vidéo / document avec message légende avant envoi
  */
 
 const MediaModule = {
     currentUserId: null,
     mediaRecorder: null,
+    audioStream: null,
     audioChunks: [],
-    pendingAudioBlob: null,
     audioTimerInterval: null,
     audioSeconds: 0,
+    isAudioCancelled: false,
+
     userStickers: [],
+    favoriteStickers: [],
+    favoriteGifs: [],
     createdGifBlob: null,
     gifFrames: [],
+    pendingPreviewFile: null,
 
-    // GIF de démarrage disponibles immédiatement sans clé API externe
+    commonEmojis: [
+        '😀','😂','🤣','😊','😍','🥰','😘','😎','🤩','🥳',
+        '😢','😭','😡','😱','🤔','🤗','🤭','😴','🤒','🙏',
+        '👍','👎','👏','🙌','🤝','💪','✌️','🤞','❤️','🔥',
+        '👁️','🔎','⚖️','😁','😃','😄','😅','😆','😉','😋',
+        '🥰','😗','😙','🥲','😚','☺️','🙂','🤩','🫡','🤨',
+        '😐','😑','😶','🫥','😶‍🌫️','🙄','😏','😣','😥','😮',
+        '🤐','😯','😪','😫','🥱','😴','🫩','😌','😛','😜',
+        '😝','🤤','😒','😓','😔','😕','🫤','🙃','🫠','🤑',
+        '😲','☹️','🙁','😖','😞','😟','😤','😢','😭','😦',
+        ' 😧','😨','😩','🤯','😬','😮‍💨','😰','🥵','🥶','😳',
+        '🤪','😵','😵‍💫','🥴','😠','😡','🤬','😷','🤒','🤕',
+        '🤢','🤮','🤧','😇','🥳','🥸','🥺','🥹','🤠','🤡',
+        '🤥','🫨','🙂‍↔️','🙂‍↕️','🤫','🤭','🫢','🫣','🧐','🤓',
+        '😈','👿','👹','👺','💀','☠️','👻','👽','👾','🤖',
+        '💩','😺','😸','😹','😻','😼','😽','🙀','😿','😾',
+        '🙈','🙉','🙊','🐵','🐶','🐺','🐱','🦁','🐯','🦒',
+        '🦊','🐷','🐗','🐭','🐹','🐰','🐻','🐻‍❄️','🐨','🐼',
+        '🐸','🦓','🐴','🫎','🫏','🦄','🐔','🐲','🐽','🐾',
+        '🐒','🦍','🦧','🦮','🐕‍🦺','🐩','🐕','🐈','🐈‍⬛','🦛',
+        '🐆','🐅','🐎','🦌','🦬','🦏','🐂','🐃','🐄','🐖',
+        '🐏','🦥','🐑','🐐','🐪','🐫','🦙','🦘','🦥','🦨',
+        '🦡','🐘','🦣','🐁','🦔','🐇','🐿️','🦫','🦎','🐊',
+        '🐢','🐍','🐉','🦕','🦖','🦈','🐬','🦭','🐳','🐋',
+        '🐟','🐠','🐡','🦐','🦑','🐙','🦞','🦀','🐚','🪸',
+        '🪼','🐓','🦃','🦅','🕊️','🦢','🦜','🪽','🐦‍⬛','🪿',
+        '🐦‍🔥','🦩','🦚','🦉','🦤','🪶','🐦','🐧','🐥','🐤',
+        '🐣','🦇','🦋','🐌','🐛','🦗','🐜 ','🪳','🐝','🦂',
+        '🕷️','🕸️','🦠','🧞‍♀️','🧞‍♂️','🧞','🧟‍♂️ ','🧌 '
+    ],
+
     starterGifs: [
-        {
-            id: 'gif-1',
-            title: 'Bravo / Applaudissements',
-            url: 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif'
-        },
-        {
-            id: 'gif-2',
-            title: 'Super / Validé',
-            url: 'https://media.giphy.com/media/111ebonMs90YLu/giphy.gif'
-        },
-        {
-            id: 'gif-3',
-            title: 'Rire / Drôle',
-            url: 'https://media.giphy.com/media/ZqlvCTNHpqrio/giphy.gif'
-        },
-        {
-            id: 'gif-4',
-            title: 'Salut / Bonjour',
-            url: 'https://media.giphy.com/media/3o7abB06u9bNzA8lu8/giphy.gif'
-        }
+        { id: 'gif-1', title: 'Bravo', url: 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif' },
+        { id: 'gif-2', title: 'Validé', url: 'https://media.giphy.com/media/111ebonMs90YLu/giphy.gif' },
+        { id: 'gif-3', title: 'Rire', url: 'https://media.giphy.com/media/ZqlvCTNHpqrio/giphy.gif' },
+        { id: 'gif-4', title: 'Salut', url: 'https://media.giphy.com/media/3o7abB06u9bNzA8lu8/giphy.gif' }
     ],
 
     async init(userId) {
         this.currentUserId = userId;
-        this.bindAudioEvents();
+        this.renderEmojisGrid();
+        this.bindMessengerAudioEvents();
+        this.bindMediaPreviewEvents();
         this.bindStickerStudioEvents();
         this.bindGifEvents();
-        await this.loadUserStickers();
+        await Promise.all([
+            this.loadUserStickers(),
+            this.loadUserFavorites()
+        ]);
     },
 
     // =========================================================================
-    // 1. MESSAGES AUDIO (ENREGISTREMENT & LECTURE)
+    // 1. PANNEAU ÉMOJIS
     // =========================================================================
-    bindAudioEvents() {
+    renderEmojisGrid() {
+        const grid = document.getElementById('emojis-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        this.commonEmojis.forEach((emoji) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'emoji-item-btn';
+            btn.textContent = emoji;
+            btn.addEventListener('click', () => {
+                const input = document.getElementById('message-input');
+                input.value += emoji;
+                input.dispatchEvent(new Event('input'));
+                input.focus();
+            });
+            grid.appendChild(btn);
+        });
+    },
+
+    // =========================================================================
+    // 2. APERÇU PHOTO / VIDÉO / DOCUMENT AVEC LÉGENDE AVANT ENVOI
+    // =========================================================================
+    bindMediaPreviewEvents() {
+        const fileInputs = [
+            document.getElementById('chat-gallery-input'),
+            document.getElementById('chat-camera-input'),
+            document.getElementById('chat-doc-input'),
+            document.getElementById('chat-quick-photo-input')
+        ];
+
+        fileInputs.forEach((inp) => {
+            if (!inp) return;
+            inp.addEventListener('change', (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                    document.getElementById('attachment-drawer')?.classList.add('hidden');
+                    this.openFilePreviewModal(file);
+                    inp.value = '';
+                }
+            });
+        });
+
+        document.getElementById('btn-confirm-send-media')?.addEventListener('click', async () => {
+            await this.confirmAndSendPreviewFile();
+        });
+
+        document.getElementById('media-caption-input')?.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                await this.confirmAndSendPreviewFile();
+            }
+        });
+    },
+
+    openFilePreviewModal(file) {
+        if (file.size > 20 * 1024 * 1024) {
+            alert('Le fichier dépasse la limite de 20 Mo.');
+            return;
+        }
+
+        this.pendingPreviewFile = file;
+        const imgEl = document.getElementById('preview-stage-img');
+        const vidEl = document.getElementById('preview-stage-video');
+        const docEl = document.getElementById('preview-stage-doc');
+        const captionInput = document.getElementById('media-caption-input');
+
+        imgEl.classList.add('hidden');
+        vidEl.classList.add('hidden');
+        docEl.classList.add('hidden');
+        captionInput.value = document.getElementById('message-input').value.trim();
+
+        const objectUrl = URL.createObjectURL(file);
+
+        if (file.type.startsWith('image/')) {
+            imgEl.src = objectUrl;
+            imgEl.classList.remove('hidden');
+        } else if (file.type.startsWith('video/')) {
+            vidEl.src = objectUrl;
+            vidEl.classList.remove('hidden');
+        } else {
+            document.getElementById('preview-doc-name').textContent = file.name;
+            docEl.classList.remove('hidden');
+        }
+
+        document.getElementById('modal-media-preview').classList.remove('hidden');
+        captionInput.focus();
+    },
+
+    async confirmAndSendPreviewFile() {
+        if (!this.pendingPreviewFile || !MessagesModule.activeConversationId) return;
+
+        const file = this.pendingPreviewFile;
+        const caption = document.getElementById('media-caption-input').value.trim();
+        const confirmBtn = document.getElementById('btn-confirm-send-media');
+        confirmBtn.disabled = true;
+
+        try {
+            const ext = file.name.split('.').pop().toLowerCase() || 'bin';
+            const path = `${this.currentUserId}/media_${Date.now()}.${ext}`;
+
+            const { error: upErr } = await supabaseClient.storage
+                .from('chat-media')
+                .upload(path, file);
+
+            if (upErr) throw upErr;
+
+            const { data: pub } = supabaseClient.storage
+                .from('chat-media')
+                .getPublicUrl(path);
+
+            let msgType = 'file';
+            if (file.type.startsWith('image/')) msgType = 'image';
+            else if (file.type.startsWith('video/')) msgType = 'video';
+
+            await MessagesModule.sendMediaMessage({
+                type: msgType,
+                mediaUrl: pub.publicUrl,
+                caption,
+                meta: { name: file.name, size: file.size }
+            });
+
+            // Nettoyer le champ principal si le texte a été transféré dans la légende
+            const mainInput = document.getElementById('message-input');
+            mainInput.value = '';
+            mainInput.dispatchEvent(new Event('input'));
+
+            this.pendingPreviewFile = null;
+            document.getElementById('modal-media-preview').classList.add('hidden');
+        } catch (err) {
+            console.error('Erreur envoi fichier :', err);
+            alert("Impossible d'envoyer le fichier.");
+        } finally {
+            confirmBtn.disabled = false;
+        }
+    },
+
+    // =========================================================================
+    // 3. AUDIO FAÇON FACEBOOK MESSENGER (PAUSE/REPRISE + ONDE + ENVOI DIRECT)
+    // =========================================================================
+    bindMessengerAudioEvents() {
         const recordBtn = document.getElementById('btn-record-audio');
-        const stopBtn = document.getElementById('btn-stop-audio');
         const cancelBtn = document.getElementById('btn-cancel-audio');
+        const pauseResumeBtn = document.getElementById('btn-pause-resume-audio');
         const sendAudioBtn = document.getElementById('btn-send-audio');
 
         if (!recordBtn) return;
 
-        recordBtn.addEventListener('click', () => this.startRecording());
-        stopBtn.addEventListener('click', () => this.stopRecording());
-        cancelBtn.addEventListener('click', () => this.resetAudioRecorder());
-        sendAudioBtn.addEventListener('click', () => this.sendRecordedAudio());
+        recordBtn.addEventListener('click', () => this.startMessengerRecording());
+        cancelBtn.addEventListener('click', () => this.cancelMessengerRecording());
+        pauseResumeBtn.addEventListener('click', () => this.togglePauseMessengerRecording());
+        sendAudioBtn.addEventListener('click', () => this.finishAndSendMessengerAudio());
     },
 
-    async startRecording() {
+    async startMessengerRecording() {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             alert("L'enregistrement vocal n'est pas supporté par ce navigateur.");
             return;
         }
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
                 ? 'audio/webm;codecs=opus'
                 : 'audio/webm';
 
-            this.mediaRecorder = new MediaRecorder(stream, { mimeType });
+            this.mediaRecorder = new MediaRecorder(this.audioStream, { mimeType });
             this.audioChunks = [];
             this.audioSeconds = 0;
+            this.isAudioCancelled = false;
 
             this.mediaRecorder.ondataavailable = (e) => {
-                if (e.data && e.data.size > 0) {
-                    this.audioChunks.push(e.data);
-                }
+                if (e.data && e.data.size > 0) this.audioChunks.push(e.data);
             };
 
-            this.mediaRecorder.onstop = () => {
-                stream.getTracks().forEach((track) => track.stop());
+            this.mediaRecorder.onstop = async () => {
+                this.audioStream?.getTracks().forEach((t) => t.stop());
                 clearInterval(this.audioTimerInterval);
-                this.pendingAudioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
 
-                const previewAudio = document.getElementById('audio-preview-player');
-                previewAudio.src = URL.createObjectURL(this.pendingAudioBlob);
-                previewAudio.classList.remove('hidden');
+                if (this.isAudioCancelled || this.audioChunks.length === 0) {
+                    this.resetMessengerAudioUI();
+                    return;
+                }
 
-                document.getElementById('btn-stop-audio').classList.add('hidden');
-                document.getElementById('btn-send-audio').classList.remove('hidden');
+                const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                await this.uploadAndSendAudioBlob(blob);
+                this.resetMessengerAudioUI();
             };
 
-            this.mediaRecorder.start();
+            this.mediaRecorder.start(250);
 
-            document.getElementById('audio-recorder-bar').classList.remove('hidden');
-            document.getElementById('audio-preview-player').classList.add('hidden');
-            document.getElementById('btn-stop-audio').classList.remove('hidden');
-            document.getElementById('btn-send-audio').classList.add('hidden');
-            document.getElementById('audio-timer').textContent = '00:00';
+            // Basculer l'interface sur la barre Messenger
+            document.getElementById('chat-footer-bar').classList.add('hidden');
+            document.getElementById('messenger-audio-bar').classList.remove('hidden');
+            document.getElementById('audio-waveform').classList.add('recording');
+            document.getElementById('icon-audio-pause').classList.remove('hidden');
+            document.getElementById('icon-audio-play').classList.add('hidden');
+            document.getElementById('audio-timer').textContent = '0:00';
 
-            this.audioTimerInterval = setInterval(() => {
+            this.startAudioTimer();
+        } catch (err) {
+            alert("Autorisez l'accès au microphone pour envoyer un message vocal.");
+        }
+    },
+
+    startAudioTimer() {
+        clearInterval(this.audioTimerInterval);
+        this.audioTimerInterval = setInterval(() => {
+            if (this.mediaRecorder?.state === 'recording') {
                 this.audioSeconds += 1;
-                const mins = String(Math.floor(this.audioSeconds / 60)).padStart(2, '0');
+                const mins = Math.floor(this.audioSeconds / 60);
                 const secs = String(this.audioSeconds % 60).padStart(2, '0');
                 document.getElementById('audio-timer').textContent = `${mins}:${secs}`;
-
-                // Limite de sécurité à 2 minutes
-                if (this.audioSeconds >= 120) {
-                    this.stopRecording();
+                if (this.audioSeconds >= 180) {
+                    this.finishAndSendMessengerAudio();
                 }
-            }, 1000);
-        } catch (err) {
-            console.error('Accès micro refusé :', err);
-            alert("Impossible d'accéder au microphone. Vérifiez les permissions du navigateur.");
+            }
+        }, 1000);
+    },
+
+    togglePauseMessengerRecording() {
+        if (!this.mediaRecorder) return;
+        const waveEl = document.getElementById('audio-waveform');
+        const pauseIcon = document.getElementById('icon-audio-pause');
+        const playIcon = document.getElementById('icon-audio-play');
+
+        if (this.mediaRecorder.state === 'recording') {
+            this.mediaRecorder.pause();
+            waveEl.classList.remove('recording');
+            pauseIcon.classList.add('hidden');
+            playIcon.classList.remove('hidden');
+        } else if (this.mediaRecorder.state === 'paused') {
+            this.mediaRecorder.resume();
+            waveEl.classList.add('recording');
+            pauseIcon.classList.remove('hidden');
+            playIcon.classList.add('hidden');
         }
     },
 
-    stopRecording() {
+    cancelMessengerRecording() {
+        this.isAudioCancelled = true;
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+            this.mediaRecorder.stop();
+        } else {
+            this.resetMessengerAudioUI();
+        }
+    },
+
+    finishAndSendMessengerAudio() {
+        this.isAudioCancelled = false;
         if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
             this.mediaRecorder.stop();
         }
     },
 
-    resetAudioRecorder() {
+    resetMessengerAudioUI() {
         clearInterval(this.audioTimerInterval);
-        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-            this.mediaRecorder.stop();
-        }
-        this.pendingAudioBlob = null;
-        this.audioChunks = [];
-        this.audioSeconds = 0;
-        document.getElementById('audio-recorder-bar').classList.add('hidden');
-        document.getElementById('audio-preview-player').src = '';
+        document.getElementById('messenger-audio-bar')?.classList.add('hidden');
+        document.getElementById('chat-footer-bar')?.classList.remove('hidden');
+        document.getElementById('audio-waveform')?.classList.remove('recording');
     },
 
-    async sendRecordedAudio() {
-        if (!this.pendingAudioBlob || !MessagesModule.activeConversationId) return;
+    async uploadAndSendAudioBlob(blob) {
+        if (!MessagesModule.activeConversationId) return;
+        const path = `${this.currentUserId}/voice_${Date.now()}.webm`;
 
-        const sendBtn = document.getElementById('btn-send-audio');
-        sendBtn.disabled = true;
+        const { error: upErr } = await supabaseClient.storage
+            .from('chat-media')
+            .upload(path, blob, { contentType: 'audio/webm' });
 
-        try {
-            const fileName = `${this.currentUserId}/audio_${Date.now()}.webm`;
-            const { error: uploadError } = await supabaseClient.storage
-                .from('chat-media')
-                .upload(fileName, this.pendingAudioBlob, { contentType: 'audio/webm' });
-
-            if (uploadError) throw uploadError;
-
-            const { data: publicData } = supabaseClient.storage
-                .from('chat-media')
-                .getPublicUrl(fileName);
-
-            await MessagesModule.sendMediaMessage({
-                type: 'audio',
-                mediaUrl: publicData.publicUrl,
-                meta: { duration: this.audioSeconds }
-            });
-
-            this.resetAudioRecorder();
-        } catch (err) {
-            console.error('Erreur envoi audio :', err);
-            alert("Impossible d'envoyer le message vocal.");
-        } finally {
-            sendBtn.disabled = false;
+        if (upErr) {
+            alert("Échec de l'envoi du message vocal.");
+            return;
         }
+
+        const { data: pub } = supabaseClient.storage
+            .from('chat-media')
+            .getPublicUrl(path);
+
+        await MessagesModule.sendMediaMessage({
+            type: 'audio',
+            mediaUrl: pub.publicUrl,
+            meta: { duration: this.audioSeconds }
+        });
     },
 
     // =========================================================================
-    // 2. STICKERS PERSONNALISÉS & CRÉATEUR DE STICKER
+    // 4. FAVORIS STICKERS & GIF (AJOUT DEPUIS LES MESSAGES REÇUS)
+    // =========================================================================
+    async loadUserFavorites() {
+        const { data, error } = await supabaseClient
+            .from('user_favorites')
+            .select('*')
+            .eq('user_id', this.currentUserId)
+            .order('created_at', { ascending: false });
+
+        if (!error && data) {
+            this.favoriteStickers = data.filter((f) => f.item_type === 'sticker');
+            this.favoriteGifs = data.filter((f) => f.item_type === 'gif');
+            this.renderStickersGrid();
+            this.renderGifList();
+        }
+    },
+
+    async addToFavorites(itemType, mediaUrl, label = '') {
+        const { data, error } = await supabaseClient
+            .from('user_favorites')
+            .upsert(
+                {
+                    user_id: this.currentUserId,
+                    item_type: itemType,
+                    media_url: mediaUrl,
+                    label
+                },
+                { onConflict: 'user_id,item_type,media_url' }
+            )
+            .select()
+            .single();
+
+        if (!error && data) {
+            await this.loadUserFavorites();
+            return true;
+        }
+        return false;
+    },
+
+    // =========================================================================
+    // 5. STICKERS PERSONNALISÉS & CRÉATEUR
     // =========================================================================
     bindStickerStudioEvents() {
         const openStudioBtn = document.getElementById('btn-open-sticker-creator');
@@ -186,7 +414,7 @@ const MediaModule = {
         if (!openStudioBtn) return;
 
         openStudioBtn.addEventListener('click', () => {
-            document.getElementById('sticker-picker-popover').classList.add('hidden');
+            document.getElementById('expression-picker').classList.add('hidden');
             document.getElementById('modal-sticker-creator').classList.remove('hidden');
         });
 
@@ -208,7 +436,6 @@ const MediaModule = {
 
         textInput.addEventListener('input', () => this.renderStickerPreview());
         borderToggle.addEventListener('change', () => this.renderStickerPreview());
-
         saveBtn.addEventListener('click', () => this.saveCustomSticker());
     },
 
@@ -220,28 +447,22 @@ const MediaModule = {
         const size = 300;
         canvas.width = size;
         canvas.height = size;
-
         ctx.clearRect(0, 0, size, size);
 
         const withBorder = document.getElementById('sticker-white-border').checked;
         const caption = document.getElementById('sticker-caption-input').value.trim();
-
         const pad = withBorder ? 22 : 8;
         const boxSize = size - pad * 2;
 
-        // Arrondi de sticker
         ctx.save();
         this._roundRectPath(ctx, pad, pad, boxSize, boxSize, 36);
         ctx.clip();
 
-        // Recadrage centré (cover)
         const img = this._stickerSourceImg;
         const scale = Math.max(boxSize / img.width, boxSize / img.height);
         const drawW = img.width * scale;
         const drawH = img.height * scale;
-        const dx = pad + (boxSize - drawW) / 2;
-        const dy = pad + (boxSize - drawH) / 2;
-        ctx.drawImage(img, dx, dy, drawW, drawH);
+        ctx.drawImage(img, pad + (boxSize - drawW) / 2, pad + (boxSize - drawH) / 2, drawW, drawH);
         ctx.restore();
 
         if (withBorder) {
@@ -303,11 +524,7 @@ const MediaModule = {
 
             const { data: inserted, error: dbErr } = await supabaseClient
                 .from('user_stickers')
-                .insert({
-                    owner_id: this.currentUserId,
-                    label,
-                    image_url: pub.publicUrl
-                })
+                .insert({ owner_id: this.currentUserId, label, image_url: pub.publicUrl })
                 .select()
                 .single();
 
@@ -316,7 +533,6 @@ const MediaModule = {
             this.userStickers.unshift(inserted);
             this.renderStickersGrid();
 
-            // Si une conversation est ouverte, envoyer directement le sticker
             if (MessagesModule.activeConversationId) {
                 await MessagesModule.sendMediaMessage({
                     type: 'sticker',
@@ -329,7 +545,6 @@ const MediaModule = {
             document.getElementById('sticker-caption-input').value = '';
             this._stickerSourceImg = null;
         } catch (err) {
-            console.error('Erreur création sticker :', err);
             alert("Impossible d'enregistrer le sticker.");
         } finally {
             saveBtn.disabled = false;
@@ -355,24 +570,42 @@ const MediaModule = {
 
         grid.innerHTML = '';
 
-        if (this.userStickers.length === 0) {
-            grid.innerHTML = '<p class="picker-empty">Aucun sticker créé. Cliquez sur « + Créer un sticker » !</p>';
+        // Fusionner mes stickers créés + les stickers des autres mis en favori (sans doublons d'URL)
+        const seenUrls = new Set();
+        const combined = [];
+
+        this.userStickers.forEach((st) => {
+            if (!seenUrls.has(st.image_url)) {
+                seenUrls.add(st.image_url);
+                combined.push({ url: st.image_url, label: st.label || 'Mon sticker', isFav: false });
+            }
+        });
+
+        this.favoriteStickers.forEach((fav) => {
+            if (!seenUrls.has(fav.media_url)) {
+                seenUrls.add(fav.media_url);
+                combined.push({ url: fav.media_url, label: fav.label || 'Favori', isFav: true });
+            }
+        });
+
+        if (combined.length === 0) {
+            grid.innerHTML = '<p class="picker-empty">Aucun sticker. Créez le vôtre ou ajoutez un sticker reçu en favori.</p>';
             return;
         }
 
-        this.userStickers.forEach((st) => {
+        combined.forEach((item) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'media-tile-btn';
-            btn.title = st.label || 'Sticker';
-            btn.innerHTML = `<img src="${st.image_url}" alt="${UsersModule.escapeHtml(st.label || 'Sticker')}">`;
+            btn.title = item.label;
+            btn.innerHTML = `<img src="${item.url}" alt="${UsersModule.escapeHtml(item.label)}">`;
 
             btn.addEventListener('click', async () => {
-                document.getElementById('sticker-picker-popover').classList.add('hidden');
+                document.getElementById('expression-picker').classList.add('hidden');
                 await MessagesModule.sendMediaMessage({
                     type: 'sticker',
-                    mediaUrl: st.image_url,
-                    meta: { label: st.label }
+                    mediaUrl: item.url,
+                    meta: { label: item.label }
                 });
             });
 
@@ -381,7 +614,7 @@ const MediaModule = {
     },
 
     // =========================================================================
-    // 3. GIF (BIBLIOTHÈQUE + CRÉATION DE SON PROPRE GIF)
+    // 6. GIF (BIBLIOTHÈQUE + FAVORIS + CRÉATEUR)
     // =========================================================================
     bindGifEvents() {
         const openMakerBtn = document.getElementById('btn-open-gif-creator');
@@ -389,12 +622,12 @@ const MediaModule = {
         const generateBtn = document.getElementById('btn-generate-gif');
         const sendGifBtn = document.getElementById('btn-send-created-gif');
 
-        this.renderGifList(this.starterGifs);
+        this.renderGifList();
 
         if (!openMakerBtn) return;
 
         openMakerBtn.addEventListener('click', () => {
-            document.getElementById('gif-picker-popover').classList.add('hidden');
+            document.getElementById('expression-picker').classList.add('hidden');
             document.getElementById('modal-gif-creator').classList.remove('hidden');
         });
 
@@ -411,12 +644,30 @@ const MediaModule = {
         sendGifBtn.addEventListener('click', () => this.sendCreatedGif());
     },
 
-    renderGifList(items) {
+    renderGifList() {
         const list = document.getElementById('gifs-grid');
         if (!list) return;
         list.innerHTML = '';
 
-        items.forEach((gif) => {
+        const seenUrls = new Set();
+        const combined = [];
+
+        // Favoris en premier
+        this.favoriteGifs.forEach((fav) => {
+            if (!seenUrls.has(fav.media_url)) {
+                seenUrls.add(fav.media_url);
+                combined.push({ url: fav.media_url, title: fav.label || 'GIF favori' });
+            }
+        });
+
+        this.starterGifs.forEach((gif) => {
+            if (!seenUrls.has(gif.url)) {
+                seenUrls.add(gif.url);
+                combined.push({ url: gif.url, title: gif.title });
+            }
+        });
+
+        combined.forEach((gif) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'media-tile-btn gif-tile';
@@ -424,7 +675,7 @@ const MediaModule = {
             btn.innerHTML = `<img src="${gif.url}" alt="${UsersModule.escapeHtml(gif.title)}">`;
 
             btn.addEventListener('click', async () => {
-                document.getElementById('gif-picker-popover').classList.add('hidden');
+                document.getElementById('expression-picker').classList.add('hidden');
                 await MessagesModule.sendMediaMessage({
                     type: 'gif',
                     mediaUrl: gif.url,
@@ -466,7 +717,6 @@ const MediaModule = {
         canvas.height = size;
         const ctx = canvas.getContext('2d');
 
-        // Encodeur GIF89a minimaliste (palette web 216 couleurs, boucle infinie)
         const encoder = new TinyGifEncoder(size, size);
         encoder.setDelay(delayMs);
 
@@ -477,8 +727,7 @@ const MediaModule = {
             const w = img.width * scale;
             const h = img.height * scale;
             ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
-            const imageData = ctx.getImageData(0, 0, size, size).data;
-            encoder.addFrame(imageData);
+            encoder.addFrame(ctx.getImageData(0, 0, size, size).data);
         }
 
         this.createdGifBlob = encoder.finish();
@@ -506,6 +755,8 @@ const MediaModule = {
                 .from('chat-media')
                 .getPublicUrl(path);
 
+            await this.addToFavorites('gif', pub.publicUrl, 'Mon GIF');
+
             await MessagesModule.sendMediaMessage({
                 type: 'gif',
                 mediaUrl: pub.publicUrl,
@@ -518,7 +769,6 @@ const MediaModule = {
             this.createdGifBlob = null;
             this.gifFrames = [];
         } catch (err) {
-            console.error('Erreur envoi GIF :', err);
             alert("Impossible d'envoyer le GIF créé.");
         } finally {
             sendBtn.disabled = false;
@@ -526,9 +776,6 @@ const MediaModule = {
     }
 };
 
-/**
- * Encodeur GIF animé léger en JavaScript pur (palette 6x6x6 RGB + LZW non compressé)
- */
 class TinyGifEncoder {
     constructor(width, height) {
         this.width = width;
@@ -537,11 +784,7 @@ class TinyGifEncoder {
         this.frames = [];
         this.out = [];
     }
-
-    setDelay(ms) {
-        this.delayCentisecs = Math.max(2, Math.round(ms / 10));
-    }
-
+    setDelay(ms) { this.delayCentisecs = Math.max(2, Math.round(ms / 10)); }
     _quantize(rgba) {
         const pixels = new Uint8Array(this.width * this.height);
         for (let i = 0, p = 0; i < rgba.length; i += 4, p++) {
@@ -552,54 +795,28 @@ class TinyGifEncoder {
         }
         return pixels;
     }
-
-    addFrame(rgba) {
-        this.frames.push(this._quantize(rgba));
-    }
-
-    _writeStr(s) {
-        for (let i = 0; i < s.length; i++) this.out.push(s.charCodeAt(i));
-    }
-
-    _writeShort(v) {
-        this.out.push(v & 0xff, (v >> 8) & 0xff);
-    }
-
+    addFrame(rgba) { this.frames.push(this._quantize(rgba)); }
+    _writeStr(s) { for (let i = 0; i < s.length; i++) this.out.push(s.charCodeAt(i)); }
+    _writeShort(v) { this.out.push(v & 0xff, (v >> 8) & 0xff); }
     _encodeLzwUncompressed(indices) {
-        // Code size 8 -> clear code = 256, end code = 257
-        const minCodeSize = 8;
-        const clearCode = 256;
-        const endCode = 257;
-        const bytes = [minCodeSize];
-
-        let bitBuf = 0;
-        let bitCount = 0;
-        const codeSize = 9;
-        let stream = [];
-
+        const bytes = [8];
+        let bitBuf = 0, bitCount = 0, stream = [];
         const emit = (code) => {
             bitBuf |= code << bitCount;
-            bitCount += codeSize;
+            bitCount += 9;
             while (bitCount >= 8) {
                 stream.push(bitBuf & 0xff);
                 bitBuf >>= 8;
                 bitCount -= 8;
             }
         };
-
-        emit(clearCode);
+        emit(256);
         for (let i = 0; i < indices.length; i++) {
             emit(indices[i]);
-            if (stream.length > 3500) {
-                emit(clearCode);
-            }
+            if (stream.length > 3500) emit(256);
         }
-        emit(endCode);
-        if (bitCount > 0) {
-            stream.push(bitBuf & 0xff);
-        }
-
-        // Découpage en blocs de 255 octets max
+        emit(257);
+        if (bitCount > 0) stream.push(bitBuf & 0xff);
         for (let offset = 0; offset < stream.length; offset += 255) {
             const chunk = stream.slice(offset, offset + 255);
             bytes.push(chunk.length, ...chunk);
@@ -607,51 +824,33 @@ class TinyGifEncoder {
         bytes.push(0x00);
         return bytes;
     }
-
     finish() {
         this.out = [];
         this._writeStr('GIF89a');
         this._writeShort(this.width);
         this._writeShort(this.height);
-        // Global color table (256 couleurs -> size code = 7)
         this.out.push(0xf7, 0x00, 0x00);
-
         for (let idx = 0; idx < 256; idx++) {
             if (idx < 216) {
-                const r = Math.floor(idx / 36);
-                const g = Math.floor((idx % 36) / 6);
-                const b = idx % 6;
+                const r = Math.floor(idx / 36), g = Math.floor((idx % 36) / 6), b = idx % 6;
                 this.out.push(Math.round((r / 5) * 255), Math.round((g / 5) * 255), Math.round((b / 5) * 255));
-            } else {
-                this.out.push(0, 0, 0);
-            }
+            } else this.out.push(0, 0, 0);
         }
-
-        // Extension Netscape 2.0 pour boucle infinie
         this.out.push(0x21, 0xff, 0x0b);
         this._writeStr('NETSCAPE2.0');
         this.out.push(0x03, 0x01);
         this._writeShort(0);
         this.out.push(0x00);
-
         for (const frameIndices of this.frames) {
-            // Graphic Control Extension
             this.out.push(0x21, 0xf9, 0x04, 0x04);
             this._writeShort(this.delayCentisecs);
-            this.out.push(0x00, 0x00);
-
-            // Image Descriptor
-            this.out.push(0x2c);
+            this.out.push(0x00, 0x00, 0x2c);
             this._writeShort(0);
             this._writeShort(0);
             this._writeShort(this.width);
             this._writeShort(this.height);
-            this.out.push(0x00);
-
-            const lzwData = this._encodeLzwUncompressed(frameIndices);
-            this.out.push(...lzwData);
+            this.out.push(0x00, ...this._encodeLzwUncompressed(frameIndices));
         }
-
         this.out.push(0x3b);
         return new Blob([new Uint8Array(this.out)], { type: 'image/gif' });
     }
