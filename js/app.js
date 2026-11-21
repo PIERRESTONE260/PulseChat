@@ -83,13 +83,12 @@ const AppController = {
             this.toggleTheme();
         });
 
-        // Déconnexion réelle
+        // Déconnexion propre (la redirection est gérée par onAuthStateChange)
         document.getElementById('btn-logout').addEventListener('click', async () => {
             await PresenceModule.cleanup();
             ConversationsModule.cleanup();
             MessagesModule.cleanup();
             await supabaseClient.auth.signOut();
-            window.location.replace('login.html');
         });
 
         // Ouverture modale profil personnel
@@ -173,6 +172,16 @@ const AppController = {
         document.getElementById('btn-toggle-attachments')?.addEventListener('click', () => {
             document.getElementById('expression-picker')?.classList.add('hidden');
             document.getElementById('attachment-drawer')?.classList.toggle('hidden');
+        });
+
+        // Fermer les tiroirs / panneaux lorsqu'on tape ou clique dans les messages
+        document.getElementById('message-input')?.addEventListener('focus', () => {
+            document.getElementById('attachment-drawer')?.classList.add('hidden');
+            document.getElementById('expression-picker')?.classList.add('hidden');
+        });
+        document.getElementById('messages-container')?.addEventListener('click', () => {
+            document.getElementById('attachment-drawer')?.classList.add('hidden');
+            document.getElementById('expression-picker')?.classList.add('hidden');
         });
 
         // Mise à jour dynamique des statuts en ligne

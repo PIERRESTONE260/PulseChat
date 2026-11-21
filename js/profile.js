@@ -61,7 +61,7 @@ const ProfileModule = {
         alertBox.classList.add('hidden');
 
         if (file.size > 2 * 1024 * 1024) {
-            alertBox.textContent = 'La image est trop lourde (maximum 2 Mo).';
+            alertBox.textContent = "L'image est trop lourde (maximum 2 Mo).";
             alertBox.className = 'alert alert-error';
             alertBox.classList.remove('hidden');
             return;
@@ -138,7 +138,6 @@ const ProfileModule = {
         saveBtn.disabled = true;
 
         try {
-            // Vérifier l'unicité uniquement si le username a changé
             if (username !== this.currentProfile.username) {
                 const { data: available, error: checkError } = await supabaseClient.rpc('is_username_available', {
                     check_username: username

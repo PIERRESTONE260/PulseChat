@@ -18,38 +18,32 @@ const MediaModule = {
     favoriteStickers: [],
     favoriteGifs: [],
     createdGifBlob: null,
+    createdGifPreviewUrl: null,
     gifFrames: [],
     pendingPreviewFile: null,
+    pendingPreviewObjectUrl: null,
 
     commonEmojis: [
-        '😀','😂','🤣','😊','😍','🥰','😘','😎','🤩','🥳',
-        '😢','😭','😡','😱','🤔','🤗','🤭','😴','🤒','🙏',
-        '👍','👎','👏','🙌','🤝','💪','✌️','🤞','❤️','🔥',
-        '👁️','🔎','⚖️','😁','😃','😄','😅','😆','😉','😋',
-        '🥰','😗','😙','🥲','😚','☺️','🙂','🤩','🫡','🤨',
-        '😐','😑','😶','🫥','😶‍🌫️','🙄','😏','😣','😥','😮',
-        '🤐','😯','😪','😫','🥱','😴','🫩','😌','😛','😜',
-        '😝','🤤','😒','😓','😔','😕','🫤','🙃','🫠','🤑',
-        '😲','☹️','🙁','😖','😞','😟','😤','😢','😭','😦',
-        ' 😧','😨','😩','🤯','😬','😮‍💨','😰','🥵','🥶','😳',
-        '🤪','😵','😵‍💫','🥴','😠','😡','🤬','😷','🤒','🤕',
-        '🤢','🤮','🤧','😇','🥳','🥸','🥺','🥹','🤠','🤡',
-        '🤥','🫨','🙂‍↔️','🙂‍↕️','🤫','🤭','🫢','🫣','🧐','🤓',
-        '😈','👿','👹','👺','💀','☠️','👻','👽','👾','🤖',
-        '💩','😺','😸','😹','😻','😼','😽','🙀','😿','😾',
-        '🙈','🙉','🙊','🐵','🐶','🐺','🐱','🦁','🐯','🦒',
-        '🦊','🐷','🐗','🐭','🐹','🐰','🐻','🐻‍❄️','🐨','🐼',
-        '🐸','🦓','🐴','🫎','🫏','🦄','🐔','🐲','🐽','🐾',
-        '🐒','🦍','🦧','🦮','🐕‍🦺','🐩','🐕','🐈','🐈‍⬛','🦛',
-        '🐆','🐅','🐎','🦌','🦬','🦏','🐂','🐃','🐄','🐖',
-        '🐏','🦥','🐑','🐐','🐪','🐫','🦙','🦘','🦥','🦨',
-        '🦡','🐘','🦣','🐁','🦔','🐇','🐿️','🦫','🦎','🐊',
-        '🐢','🐍','🐉','🦕','🦖','🦈','🐬','🦭','🐳','🐋',
-        '🐟','🐠','🐡','🦐','🦑','🐙','🦞','🦀','🐚','🪸',
-        '🪼','🐓','🦃','🦅','🕊️','🦢','🦜','🪽','🐦‍⬛','🪿',
-        '🐦‍🔥','🦩','🦚','🦉','🦤','🪶','🐦','🐧','🐥','🐤',
-        '🐣','🦇','🦋','🐌','🐛','🦗','🐜 ','🪳','🐝','🦂',
-        '🕷️','🕸️','🦠','🧞‍♀️','🧞‍♂️','🧞','🧟‍♂️ ','🧌 '
+        '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃',
+        '😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙',
+        '🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫',
+        '🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬',
+        '🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢',
+        '🤮','🤧','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸',
+        '😎','🤓','🧐','😕','😟','🙁','☹️','😮','😯','😲',
+        '😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱',
+        '😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠',
+        '🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻',
+        '👽','👾','🤖','😺','😸','😹','😻','😼','😽','🙀',
+        '😿','😾','🙈','🙉','🙊','👋','🤚','🖐️','✋','🖖',
+        '👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉',
+        '👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜',
+        '👏','🙌','👐','🤲','🤝','🙏','💪','❤️','🧡','💛',
+        '💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞',
+        '💓','💗','💖','💘','💝','🔥','✨','🎉','💯','✅',
+        '❌','⚡','💬','🎵','📷','🚀','🐶','🐱','🦁','🐯',
+        '🦊','🐻','🐼','🐨','🐸','🐵','🐔','🐧','🦅','🦉',
+        '🦋','🐝','🐢','🐍','🦖','🦈','🐬','🐳','🐘','🦒'
     ],
 
     starterGifs: [
@@ -128,6 +122,34 @@ const MediaModule = {
                 await this.confirmAndSendPreviewFile();
             }
         });
+
+        const previewModal = document.getElementById('modal-media-preview');
+        previewModal?.querySelectorAll('.modal-close').forEach((btn) => {
+            btn.addEventListener('click', () => this.resetFilePreviewModal());
+        });
+        previewModal?.addEventListener('click', (e) => {
+            if (e.target === previewModal) {
+                this.resetFilePreviewModal();
+            }
+        });
+    },
+
+    resetFilePreviewModal() {
+        const vidEl = document.getElementById('preview-stage-video');
+        const imgEl = document.getElementById('preview-stage-img');
+        if (vidEl) {
+            vidEl.pause();
+            vidEl.removeAttribute('src');
+            vidEl.load();
+        }
+        if (imgEl) {
+            imgEl.removeAttribute('src');
+        }
+        if (this.pendingPreviewObjectUrl) {
+            URL.revokeObjectURL(this.pendingPreviewObjectUrl);
+            this.pendingPreviewObjectUrl = null;
+        }
+        this.pendingPreviewFile = null;
     },
 
     openFilePreviewModal(file) {
@@ -136,7 +158,9 @@ const MediaModule = {
             return;
         }
 
+        this.resetFilePreviewModal();
         this.pendingPreviewFile = file;
+
         const imgEl = document.getElementById('preview-stage-img');
         const vidEl = document.getElementById('preview-stage-video');
         const docEl = document.getElementById('preview-stage-doc');
@@ -147,13 +171,13 @@ const MediaModule = {
         docEl.classList.add('hidden');
         captionInput.value = document.getElementById('message-input').value.trim();
 
-        const objectUrl = URL.createObjectURL(file);
+        this.pendingPreviewObjectUrl = URL.createObjectURL(file);
 
         if (file.type.startsWith('image/')) {
-            imgEl.src = objectUrl;
+            imgEl.src = this.pendingPreviewObjectUrl;
             imgEl.classList.remove('hidden');
         } else if (file.type.startsWith('video/')) {
-            vidEl.src = objectUrl;
+            vidEl.src = this.pendingPreviewObjectUrl;
             vidEl.classList.remove('hidden');
         } else {
             document.getElementById('preview-doc-name').textContent = file.name;
@@ -197,12 +221,11 @@ const MediaModule = {
                 meta: { name: file.name, size: file.size }
             });
 
-            // Nettoyer le champ principal si le texte a été transféré dans la légende
             const mainInput = document.getElementById('message-input');
             mainInput.value = '';
             mainInput.dispatchEvent(new Event('input'));
 
-            this.pendingPreviewFile = null;
+            this.resetFilePreviewModal();
             document.getElementById('modal-media-preview').classList.add('hidden');
         } catch (err) {
             console.error('Erreur envoi fichier :', err);
@@ -266,7 +289,6 @@ const MediaModule = {
 
             this.mediaRecorder.start(250);
 
-            // Basculer l'interface sur la barre Messenger
             document.getElementById('chat-footer-bar').classList.add('hidden');
             document.getElementById('messenger-audio-bar').classList.remove('hidden');
             document.getElementById('audio-waveform').classList.add('recording');
@@ -570,21 +592,20 @@ const MediaModule = {
 
         grid.innerHTML = '';
 
-        // Fusionner mes stickers créés + les stickers des autres mis en favori (sans doublons d'URL)
         const seenUrls = new Set();
         const combined = [];
 
         this.userStickers.forEach((st) => {
             if (!seenUrls.has(st.image_url)) {
                 seenUrls.add(st.image_url);
-                combined.push({ url: st.image_url, label: st.label || 'Mon sticker', isFav: false });
+                combined.push({ url: st.image_url, label: st.label || 'Mon sticker' });
             }
         });
 
         this.favoriteStickers.forEach((fav) => {
             if (!seenUrls.has(fav.media_url)) {
                 seenUrls.add(fav.media_url);
-                combined.push({ url: fav.media_url, label: fav.label || 'Favori', isFav: true });
+                combined.push({ url: fav.media_url, label: fav.label || 'Favori' });
             }
         });
 
@@ -652,7 +673,6 @@ const MediaModule = {
         const seenUrls = new Set();
         const combined = [];
 
-        // Favoris en premier
         this.favoriteGifs.forEach((fav) => {
             if (!seenUrls.has(fav.media_url)) {
                 seenUrls.add(fav.media_url);
@@ -730,9 +750,15 @@ const MediaModule = {
             encoder.addFrame(ctx.getImageData(0, 0, size, size).data);
         }
 
+        if (this.createdGifPreviewUrl) {
+            URL.revokeObjectURL(this.createdGifPreviewUrl);
+        }
+
         this.createdGifBlob = encoder.finish();
+        this.createdGifPreviewUrl = URL.createObjectURL(this.createdGifBlob);
+
         const previewImg = document.getElementById('gif-result-preview');
-        previewImg.src = URL.createObjectURL(this.createdGifBlob);
+        previewImg.src = this.createdGifPreviewUrl;
         previewImg.classList.remove('hidden');
         document.getElementById('btn-send-created-gif').classList.remove('hidden');
     },
@@ -762,6 +788,11 @@ const MediaModule = {
                 mediaUrl: pub.publicUrl,
                 meta: { title: 'GIF créé par moi', custom: true }
             });
+
+            if (this.createdGifPreviewUrl) {
+                URL.revokeObjectURL(this.createdGifPreviewUrl);
+                this.createdGifPreviewUrl = null;
+            }
 
             document.getElementById('modal-gif-creator').classList.add('hidden');
             document.getElementById('gif-result-preview').classList.add('hidden');
