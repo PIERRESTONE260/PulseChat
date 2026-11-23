@@ -2,53 +2,54 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PulseChat — Messagerie Instantanée</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/svg+xml" href="assets/icons/logo.svg">
-    <link rel="apple-touch-icon" href="assets/icons/logo.svg">
-    <meta name="theme-color" content="#1d4ed8">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>M.E.C — Messagerie</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="app-body">
-    <!-- Écran de chargement initial -->
+
+    <!-- ÉCRAN DE CHARGEMENT INITIAL -->
     <div id="global-loader" class="global-loader">
-        <div class="loader-content">
-            <div class="spinner-large"></div>
-            <p>Chargement de votre espace sécurisé...</p>
-        </div>
+        <div class="loader-spinner"></div>
+        <p>Chargement de vos discussions…</p>
     </div>
 
-    <!-- Bannière réseau -->
-    <div id="connection-banner" class="connection-banner hidden" role="status">
-        Connexion interrompue. Tentative de reconnexion en cours...
+    <!-- BANNIÈRE HORS LIGNE -->
+    <div id="connection-banner" class="connection-banner hidden">
+        Connexion perdue. Tentative de reconnexion…
     </div>
 
-    <!-- Conteneur principal -->
+    <!-- CONTENEUR PRINCIPAL DE L'APPLICATION -->
     <div id="app-shell" class="app-shell hidden">
-        
-        <!-- A. BARRE LATÉRALE -->
-        <aside class="sidebar" id="sidebar">
+
+        <!-- ===================================================================
+             COLONNE GAUCHE : BARRE LATÉRALE (DISCUSSIONS & ANNUAIRE)
+             =================================================================== -->
+        <aside class="sidebar">
+            <!-- En-tête utilisateur connecté -->
             <header class="sidebar-header">
-                <div class="app-brand">
-                    <div class="brand-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                        </svg>
+                <div id="current-user-card" class="current-user-card" title="Modifier mon profil">
+                    <div class="avatar-wrapper">
+                        <img id="sidebar-user-avatar" class="avatar-img hidden" alt="Mon avatar">
+                        <div id="sidebar-user-initials" class="avatar-initials">?</div>
+                        <span class="status-dot status-online"></span>
                     </div>
-                    <span class="brand-name">PulseChat</span>
+                    <div class="current-user-meta">
+                        <h2 id="sidebar-user-name" class="user-display-name">Chargement…</h2>
+                        <span id="sidebar-user-username" class="user-handle">@utilisateur</span>
+                    </div>
                 </div>
 
-                <div class="sidebar-actions">
-                    <button type="button" id="btn-toggle-theme" class="icon-btn" title="Changer le thème" aria-label="Changer le thème">
-                        <svg id="icon-theme-moon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <div class="sidebar-header-actions">
+                    <button type="button" id="btn-toggle-theme" class="icon-btn" title="Changer de thème">
+                        <svg id="icon-theme-moon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                         </svg>
-                        <svg id="icon-theme-sun" class="hidden" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg id="icon-theme-sun" class="hidden" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="5"></circle>
                             <line x1="12" y1="1" x2="12" y2="3"></line>
                             <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -61,14 +62,14 @@
                         </svg>
                     </button>
 
-                    <button type="button" id="btn-open-profile" class="icon-btn" title="Paramètres du profil" aria-label="Paramètres du profil">
+                    <button type="button" id="btn-open-profile" class="icon-btn" title="Paramètres du profil">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                         </svg>
                     </button>
 
-                    <button type="button" id="btn-logout" class="icon-btn icon-btn-danger" title="Se déconnecter" aria-label="Se déconnecter">
+                    <button type="button" id="btn-logout" class="icon-btn danger" title="Se déconnecter">
                         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                             <polyline points="16 17 21 12 16 7"></polyline>
@@ -78,110 +79,94 @@
                 </div>
             </header>
 
-            <!-- Carte utilisateur connecté -->
-            <div class="current-user-card" id="current-user-card" title="Cliquez pour modifier votre profil">
-                <div class="avatar-wrapper">
-                    <img id="sidebar-user-avatar" src="" alt="Avatar" class="avatar avatar-md hidden">
-                    <div id="sidebar-user-initials" class="avatar-initials avatar-md">--</div>
-                    <span class="status-dot status-online" title="En ligne"></span>
+            <!-- Onglets Discussions / Contacts -->
+            <nav class="sidebar-tabs">
+                <button type="button" class="tab-btn active" data-tab="conversations">
+                    Discussions
+                    <span id="total-unread-badge" class="badge hidden">0</span>
+                </button>
+                <button type="button" class="tab-btn" data-tab="directory">
+                    Contacts
+                </button>
+            </nav>
+
+            <!-- Vue 1 : Liste des conversations -->
+            <div id="conversations-view" class="sidebar-panel">
+                <div id="conversations-loading" class="panel-state hidden">Chargement…</div>
+                <div id="conversations-empty" class="panel-state hidden">
+                    <p>Aucune discussion pour le moment.</p>
+                    <small>Ouvrez l'onglet <strong>Contacts</strong> pour démarrer une conversation.</small>
                 </div>
-                <div class="current-user-info">
-                    <div id="sidebar-user-name" class="user-fullname">Chargement...</div>
-                    <div id="sidebar-user-username" class="user-handle">@...</div>
-                </div>
+                <ul id="conversations-list" class="item-list"></ul>
             </div>
 
-            <!-- Recherche -->
-            <div class="search-section">
-                <div class="search-input-box">
-                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                    <input type="text" id="user-search-input" placeholder="Rechercher un nom ou @username..." autocomplete="off">
-                    <button type="button" id="btn-clear-search" class="clear-search-btn hidden" aria-label="Effacer la recherche">&times;</button>
+            <!-- Vue 2 : Annuaire / Recherche d'utilisateurs -->
+            <div id="users-view" class="sidebar-panel hidden">
+                <div class="search-box">
+                    <input type="search" id="user-search-input" placeholder="Rechercher par nom ou @pseudo…" autocomplete="off">
+                    <button type="button" id="btn-clear-search" class="clear-search-btn hidden" title="Effacer">&times;</button>
                 </div>
-            </div>
-
-            <!-- Onglets -->
-            <div class="sidebar-tabs">
-                <button type="button" class="tab-btn active" data-tab="conversations" id="tab-conversations">Discussions</button>
-                <button type="button" class="tab-btn" data-tab="directory" id="tab-directory">Utilisateurs</button>
-            </div>
-
-            <!-- Liste dynamique -->
-            <div class="sidebar-list-container">
-                <div id="conversations-view" class="list-panel">
-                    <div id="conversations-loading" class="panel-state">
-                        <div class="spinner-sm"></div>
-                        <span>Chargement des discussions...</span>
-                    </div>
-                    <div id="conversations-empty" class="panel-state hidden">
-                        <p>Aucune conversation pour le moment.</p>
-                        <small>Recherchez un utilisateur ci-dessus pour démarrer un échange.</small>
-                    </div>
-                    <ul id="conversations-list" class="item-list"></ul>
-                </div>
-
-                <div id="users-view" class="list-panel hidden">
-                    <div id="users-loading" class="panel-state hidden">
-                        <div class="spinner-sm"></div>
-                        <span>Recherche en cours...</span>
-                    </div>
-                    <div id="users-empty" class="panel-state hidden">
-                        <p>Aucun utilisateur trouvé.</p>
-                        <small>Essayez avec un autre nom ou identifiant.</small>
-                    </div>
-                    <ul id="users-list" class="item-list"></ul>
-                </div>
+                <div id="users-loading" class="panel-state hidden">Recherche…</div>
+                <div id="users-empty" class="panel-state hidden">Aucun utilisateur trouvé.</div>
+                <ul id="users-list" class="item-list"></ul>
             </div>
         </aside>
 
-        <!-- B & C. ZONE PRINCIPALE DE CONVERSATION -->
-        <main class="chat-area" id="chat-area">
-            
-            <!-- C. État initial -->
-            <div id="chat-welcome" class="chat-welcome">
+        <!-- ===================================================================
+             COLONNE DROITE : ZONE DE DISCUSSION (DISPOSITION FIXE TYPE WHATSAPP)
+             =================================================================== -->
+        <main class="chat-area">
+
+            <!-- Écran d'accueil (aucune conversation sélectionnée sur grand écran) -->
+            <section id="chat-welcome" class="chat-welcome">
                 <div class="welcome-card">
-                    <div class="welcome-illustration">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <div class="welcome-icon">
+                        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                         </svg>
                     </div>
-                    <h2>Bienvenue sur PulseChat</h2>
-                    <p>Sélectionnez une discussion dans la barre latérale ou recherchez un utilisateur pour démarrer une conversation privée instantanée.</p>
-                    <button type="button" id="btn-welcome-search" class="btn btn-primary">Rechercher une personne</button>
+                    <h2>Bienvenue sur M.E.C</h2>
+                    <p>Sélectionnez une discussion à gauche ou recherchez un contact pour échanger en temps réel.</p>
+                    <button type="button" id="btn-welcome-search" class="btn-primary">
+                        Rechercher une personne
+                    </button>
                 </div>
-            </div>
+            </section>
 
-            <!-- B. Conversation active -->
-            <div id="chat-active" class="chat-active hidden">
-                <!-- En-tête du correspondant -->
+            <!-- Conversation active -->
+            <section id="chat-active" class="chat-active hidden">
+
+                <!-- 1. BARRE DU HAUT : TOUJOURS FIXE -->
                 <header class="chat-header">
-                    <div class="chat-header-left">
-                        <button type="button" id="btn-back-mobile" class="icon-btn mobile-only" aria-label="Retour aux discussions">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                <line x1="19" y1="12" x2="5" y2="12"></line>
-                                <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                        </button>
+                    <button type="button" id="btn-back-mobile" class="icon-btn btn-back-mobile" title="Retour aux discussions">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                    </button>
 
-                        <div class="chat-peer-trigger" id="btn-view-peer-profile" title="Voir le profil">
-                            <div class="avatar-wrapper">
-                                <img id="peer-avatar" src="" alt="Avatar" class="avatar avatar-md hidden">
-                                <div id="peer-initials" class="avatar-initials avatar-md">--</div>
-                                <span id="peer-status-dot" class="status-dot status-offline"></span>
-                            </div>
-                            <div class="peer-meta">
-                                <h2 id="peer-fullname" class="peer-name">Nom du contact</h2>
-                                <span id="peer-status-text" class="peer-status">Hors ligne</span>
-                            </div>
+                    <div id="btn-view-peer-profile" class="peer-header-info" title="Voir le profil">
+                        <div class="avatar-wrapper">
+                            <img id="peer-avatar" class="avatar-img hidden" alt="Avatar contact">
+                            <div id="peer-initials" class="avatar-initials">?</div>
+                            <span id="peer-status-dot" class="status-dot status-offline"></span>
+                        </div>
+                        <div class="peer-text-meta">
+                            <h3 id="peer-fullname" class="peer-name">Nom du contact</h3>
+                            <span id="peer-status-text" class="peer-status">Hors ligne</span>
                         </div>
                     </div>
 
-                    <div class="chat-header-right">
-                        <button type="button" id="btn-peer-info" class="icon-btn" title="Informations du contact" aria-label="Informations du contact">
+                    <div class="chat-header-actions">
+                        <button type="button" id="btn-toggle-chat-search" class="icon-btn" title="Rechercher dans la conversation">
                             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </button>
+
+                        <button type="button" id="btn-peer-info" class="icon-btn" title="Infos du contact">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="12" y1="16" x2="12" y2="12"></line>
                                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -190,378 +175,339 @@
                     </div>
                 </header>
 
-                <!-- Zone des messages -->
-                <div class="messages-container" id="messages-container">
+                <!-- Barre de recherche dans la conversation active (v2.2) -->
+                <div id="chat-search-bar" class="chat-search-bar hidden">
+                    <input type="search" id="chat-search-input" placeholder="Rechercher un message…" autocomplete="off">
+                    <span id="chat-search-count" class="chat-search-count">0 / 0</span>
+                    <button type="button" id="btn-chat-search-prev" class="icon-btn-sm" title="Résultat précédent">↑</button>
+                    <button type="button" id="btn-chat-search-next" class="icon-btn-sm" title="Résultat suivant">↓</button>
+                    <button type="button" id="btn-close-chat-search" class="icon-btn-sm" title="Fermer">&times;</button>
+                </div>
+
+                <!-- 2. ZONE CENTRALE : SEULE ZONE SCROLLABLE -->
+                <div id="messages-container" class="messages-container">
                     <div id="load-older-wrapper" class="load-older-wrapper hidden">
-                        <button type="button" id="btn-load-older" class="btn btn-secondary btn-sm">
+                        <button type="button" id="btn-load-older" class="btn-secondary-sm">
                             Charger les messages précédents
                         </button>
                     </div>
 
-                    <div id="messages-loading" class="panel-state hidden">
-                        <div class="spinner-sm"></div>
-                        <span>Chargement de l'historique...</span>
-                    </div>
-
+                    <div id="messages-loading" class="panel-state hidden">Chargement des messages…</div>
                     <div id="messages-empty" class="panel-state hidden">
-                        <p>Aucun message dans cette conversation.</p>
-                        <small>Envoyez le premier message ci-dessous.</small>
+                        Aucun message. Envoyez le premier message !
                     </div>
 
                     <div id="messages-list" class="messages-list"></div>
+
+                    <!-- Bouton flottant Descendre en bas + badge nouveaux messages (v2.2) -->
+                    <button type="button" id="btn-scroll-bottom" class="scroll-bottom-btn hidden" title="Descendre en bas">
+                        <span id="scroll-bottom-badge" class="scroll-bottom-badge hidden">0</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
                 </div>
 
-                <!-- Bannière erreur envoi -->
+                <!-- 3. BARRES CONTEXTUELLES & ZONE DE SAISIE : TOUJOURS VISIBLES AU-DESSUS DU CLAVIER -->
                 <div id="send-error-banner" class="send-error-banner hidden">
-                    <span id="send-error-text">Impossible d'envoyer le message.</span>
+                    <span id="send-error-text">Erreur lors de l'envoi.</span>
                     <button type="button" id="btn-dismiss-send-error">&times;</button>
                 </div>
 
-                <!-- Barre de réponse / citation -->
+                <!-- Aperçu citation / réponse -->
                 <div id="reply-preview-bar" class="reply-preview-bar hidden">
-                    <div class="reply-preview-info">
-                        <span>Réponse à :</span>
-                        <strong id="reply-preview-text"></strong>
+                    <div class="reply-preview-content">
+                        <span class="reply-preview-label">Réponse à :</span>
+                        <span id="reply-preview-text" class="reply-preview-text"></span>
                     </div>
-                    <button type="button" id="btn-cancel-reply" class="icon-btn" aria-label="Annuler la réponse">&times;</button>
+                    <button type="button" id="btn-cancel-reply" class="icon-btn-sm" title="Annuler la réponse">&times;</button>
                 </div>
 
-                <!-- TIROIR PIÈCES JOINTES STYLE WHATSAPP (Galerie, Caméra, Document) -->
-                <div id="attachment-drawer" class="attachment-drawer hidden">
-                    <div class="attachment-handle"></div>
-                    <div class="attachment-grid">
-                        <label for="chat-gallery-input" class="attachment-option">
-                            <div class="attachment-circle color-gallery">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                    <polyline points="21 15 16 10 5 21"></polyline>
-                                </svg>
-                            </div>
-                            <span>Galerie</span>
-                        </label>
-                        <input type="file" id="chat-gallery-input" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" class="hidden">
-
-                        <label for="chat-camera-input" class="attachment-option">
-                            <div class="attachment-circle color-camera">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                                    <circle cx="12" cy="13" r="4"></circle>
-                                </svg>
-                            </div>
-                            <span>Caméra</span>
-                        </label>
-                        <input type="file" id="chat-camera-input" accept="image/*,video/*" capture="environment" class="hidden">
-
-                        <label for="chat-doc-input" class="attachment-option">
-                            <div class="attachment-circle color-doc">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                                </svg>
-                            </div>
-                            <span>Document</span>
-                        </label>
-                        <input type="file" id="chat-doc-input" accept=".pdf,.doc,.docx,.txt,.zip" class="hidden">
-                    </div>
-                </div>
-
-                <!-- PANNEAU UNIFIÉ ÉMOJIS, GIF & STICKERS (AVEC FAVORIS) -->
+                <!-- Panneau unifié Émojis / GIF / Stickers -->
                 <div id="expression-picker" class="expression-picker hidden">
-                    <div class="expression-tabs">
+                    <div class="expr-tabs">
                         <button type="button" class="expr-tab active" data-expr="emojis">Émojis</button>
                         <button type="button" class="expr-tab" data-expr="gifs">GIF</button>
                         <button type="button" class="expr-tab" data-expr="stickers">Stickers</button>
                     </div>
 
-                    <!-- Onglet Émojis -->
                     <div id="expr-panel-emojis" class="expr-panel">
                         <div id="emojis-grid" class="emojis-grid"></div>
                     </div>
 
-                    <!-- Onglet GIF -->
                     <div id="expr-panel-gifs" class="expr-panel hidden">
-                        <div class="popover-header">
-                            <span>Mes GIF & Favoris</span>
-                            <button type="button" id="btn-open-gif-creator" class="btn btn-primary btn-sm">+ Créer un GIF</button>
+                        <div class="expr-panel-toolbar">
+                            <button type="button" id="btn-open-gif-creator" class="btn-secondary-sm">+ Créer un GIF</button>
                         </div>
-                        <div id="gifs-grid" class="media-grid"></div>
+                        <div id="gifs-grid" class="media-tiles-grid"></div>
                     </div>
 
-                    <!-- Onglet Stickers -->
                     <div id="expr-panel-stickers" class="expr-panel hidden">
-                        <div class="popover-header">
-                            <span>Mes Stickers & Favoris</span>
-                            <button type="button" id="btn-open-sticker-creator" class="btn btn-primary btn-sm">+ Créer un sticker</button>
+                        <div class="expr-panel-toolbar">
+                            <button type="button" id="btn-open-sticker-creator" class="btn-secondary-sm">+ Créer un sticker</button>
                         </div>
-                        <div id="stickers-grid" class="media-grid"></div>
+                        <div id="stickers-grid" class="media-tiles-grid"></div>
                     </div>
                 </div>
 
-                <!-- BARRE D'ENREGISTREMENT VOCAL FAÇON FACEBOOK MESSENGER -->
+                <!-- Tiroir pièces jointes -->
+                <div id="attachment-drawer" class="attachment-drawer hidden">
+                    <label class="attach-option" for="chat-gallery-input">
+                        <span>Galerie (Photo / Vidéo)</span>
+                        <input type="file" id="chat-gallery-input" accept="image/*,video/*" class="hidden">
+                    </label>
+                    <label class="attach-option" for="chat-camera-input">
+                        <span>Caméra</span>
+                        <input type="file" id="chat-camera-input" accept="image/*,video/*" capture="environment" class="hidden">
+                    </label>
+                    <label class="attach-option" for="chat-doc-input">
+                        <span>Document</span>
+                        <input type="file" id="chat-doc-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar" class="hidden">
+                    </label>
+                </div>
+
+                <!-- Barre d'enregistrement vocal façon Messenger -->
                 <div id="messenger-audio-bar" class="messenger-audio-bar hidden">
-                    <button type="button" id="btn-cancel-audio" class="audio-trash-btn" title="Supprimer le vocal" aria-label="Supprimer le vocal">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <button type="button" id="btn-cancel-audio" class="icon-btn danger" title="Supprimer l'enregistrement">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
                         </svg>
                     </button>
 
-                    <div class="audio-wave-pill">
-                        <button type="button" id="btn-pause-resume-audio" class="audio-ctrl-btn" title="Pause / Reprendre">
-                            <svg id="icon-audio-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <rect x="6" y="4" width="4" height="16" rx="1"></rect>
-                                <rect x="14" y="4" width="4" height="16" rx="1"></rect>
-                            </svg>
-                            <svg id="icon-audio-play" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                            </svg>
-                        </button>
-                        <div class="audio-waveform" id="audio-waveform">
-                            <span></span><span></span><span></span><span></span><span></span>
-                            <span></span><span></span><span></span><span></span><span></span>
-                            <span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                        <span id="audio-timer" class="audio-timer-badge">0:00</span>
+                    <div id="audio-waveform" class="audio-waveform">
+                        <span id="audio-timer" class="audio-timer">0:00</span>
                     </div>
 
-                    <button type="button" id="btn-send-audio" class="wa-circle-btn" title="Envoyer le message vocal" aria-label="Envoyer le message vocal">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <button type="button" id="btn-pause-resume-audio" class="icon-btn" title="Pause / Reprendre">
+                        <svg id="icon-audio-pause" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <rect x="6" y="4" width="4" height="16"></rect>
+                            <rect x="14" y="4" width="4" height="16"></rect>
+                        </svg>
+                        <svg id="icon-audio-play" class="hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </button>
+
+                    <button type="button" id="btn-send-audio" class="send-btn" title="Envoyer le vocal">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                         </svg>
                     </button>
                 </div>
 
-                <!-- PIED DE CONVERSATION FAÇON WHATSAPP -->
-                <footer class="chat-footer" id="chat-footer-bar">
-                    <form id="message-form" class="wa-composer-row">
-                        <div class="wa-input-pill">
-                            <!-- Icône Sticker / Émoji / GIF (identique à la capture WhatsApp) -->
-                            <button type="button" id="btn-toggle-expressions" class="wa-pill-icon" title="Émojis, GIF et Stickers" aria-label="Émojis, GIF et Stickers">
-                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"></path>
-                                    <path d="M15 3v6h6"></path>
-                                    <circle cx="9" cy="10" r="1" fill="currentColor"></circle>
-                                    <circle cx="15" cy="10" r="1" fill="currentColor"></circle>
-                                    <path d="M9 14c.8 1.2 2 1.8 3 1.8s2.2-.6 3-1.8"></path>
+                <!-- Barre de saisie principale -->
+                <footer id="chat-footer-bar" class="chat-footer">
+                    <form id="message-form" class="message-form">
+                        <div class="composer-pill">
+                            <button type="button" id="btn-toggle-expressions" class="composer-icon-btn" title="Émojis, GIF et Stickers">
+                                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
                                 </svg>
                             </button>
 
-                            <textarea 
-                                id="message-input" 
-                                rows="1" 
-                                maxlength="2000" 
-                                placeholder="Message" 
-                                aria-label="Message"></textarea>
+                            <textarea id="message-input" rows="1" placeholder="Message" autocomplete="off"></textarea>
 
-                            <!-- Icône Trombone (Pièces jointes) -->
-                            <button type="button" id="btn-toggle-attachments" class="wa-pill-icon" title="Joindre un fichier" aria-label="Joindre un fichier">
-                                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                            <button type="button" id="btn-toggle-attachments" class="composer-icon-btn" title="Joindre un fichier">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                                 </svg>
                             </button>
 
-                            <!-- Icône Appareil Photo rapide -->
-                            <label for="chat-quick-photo-input" class="wa-pill-icon" title="Envoyer une photo ou vidéo" aria-label="Envoyer une photo ou vidéo">
-                                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <label for="chat-quick-photo-input" class="composer-icon-btn" title="Photo rapide">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                                     <circle cx="12" cy="13" r="4"></circle>
                                 </svg>
+                                <input type="file" id="chat-quick-photo-input" accept="image/*" capture="environment" class="hidden">
                             </label>
-                            <input type="file" id="chat-quick-photo-input" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" class="hidden">
                         </div>
 
-                        <!-- Bouton circulaire droit : Micro (si vide) ou Envoyer (si texte) -->
-                        <button type="button" id="btn-record-audio" class="wa-circle-btn" title="Enregistrer un message vocal" aria-label="Enregistrer un message vocal">
-                            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                        <button type="button" id="btn-record-audio" class="mic-btn" title="Message vocal">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                <line x1="12" y1="19" x2="12" y2="22"></line>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
                             </svg>
                         </button>
 
-                        <button type="submit" id="btn-send-message" class="wa-circle-btn hidden" title="Envoyer" aria-label="Envoyer">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <button type="submit" id="btn-send-message" class="send-btn hidden" disabled title="Envoyer">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                                 <line x1="22" y1="2" x2="11" y2="13"></line>
                                 <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                             </svg>
                         </button>
                     </form>
                 </footer>
-            </div>
+            </section>
         </main>
     </div>
 
-    <!-- MODALE APERÇU PHOTO / VIDÉO AVANT ENVOI (AVEC LÉGENDE) -->
-    <div id="modal-media-preview" class="modal-backdrop hidden" role="dialog" aria-modal="true">
-        <div class="modal-card media-preview-card">
-            <div class="modal-header">
-                <h3>Aperçu avant envoi</h3>
-                <button type="button" class="icon-btn modal-close" data-close="modal-media-preview" aria-label="Fermer">&times;</button>
-            </div>
-            <div class="modal-body media-preview-body">
-                <div class="media-preview-stage">
-                    <img id="preview-stage-img" class="hidden" alt="Aperçu photo">
-                    <video id="preview-stage-video" class="hidden" controls playsinline></video>
-                    <div id="preview-stage-doc" class="hidden doc-preview-box">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                        </svg>
-                        <span id="preview-doc-name">document.pdf</span>
-                    </div>
-                </div>
-                <div class="media-caption-bar">
-                    <input type="text" id="media-caption-input" maxlength="500" placeholder="Ajouter une légende ou un message...">
-                    <button type="button" id="btn-confirm-send-media" class="wa-circle-btn" title="Envoyer">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="22" y1="2" x2="11" y2="13"></line>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- =======================================================================
+         MODALES
+         ======================================================================= -->
 
-    <!-- MODALE 1 : PARAMÈTRES DU PROFIL UTILISATEUR -->
-    <div id="modal-profile" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-profile-title">
+    <!-- Modale 1 : Édition du profil personnel -->
+    <div id="modal-profile" class="modal-backdrop hidden">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 id="modal-profile-title">Mon Profil</h3>
-                <button type="button" class="icon-btn modal-close" data-close="modal-profile" aria-label="Fermer">&times;</button>
+                <h3>Mon Profil</h3>
+                <button type="button" class="modal-close" data-close="modal-profile">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="profile-alert" class="alert hidden"></div>
 
                 <div class="profile-avatar-editor">
-                    <div class="avatar-wrapper avatar-lg-wrapper">
-                        <img id="modal-profile-avatar" src="" alt="Avatar" class="avatar avatar-lg hidden">
-                        <div id="modal-profile-initials" class="avatar-initials avatar-lg">--</div>
+                    <div class="avatar-wrapper lg">
+                        <img id="modal-profile-avatar" class="avatar-img hidden" alt="Avatar">
+                        <div id="modal-profile-initials" class="avatar-initials">?</div>
                     </div>
-                    <div class="avatar-upload-controls">
-                        <label for="avatar-file-input" class="btn btn-secondary btn-sm">Changer la photo</label>
-                        <input type="file" id="avatar-file-input" accept="image/png, image/jpeg, image/webp" class="hidden">
-                        <small>JPG, PNG ou WebP (Max. 2 Mo)</small>
-                    </div>
+                    <label for="avatar-file-input" class="btn-secondary-sm">
+                        Changer la photo
+                        <input type="file" id="avatar-file-input" accept="image/*" class="hidden">
+                    </label>
                 </div>
 
-                <form id="profile-form" class="auth-form">
-                    <div class="form-group">
-                        <label for="edit-fullname">Nom complet</label>
+                <form id="profile-form" class="stacked-form">
+                    <label>
+                        <span>Nom complet</span>
                         <input type="text" id="edit-fullname" required minlength="2" maxlength="60">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="edit-username">Nom d'utilisateur</label>
-                        <div class="input-prefix-wrapper">
-                            <span class="input-prefix">@</span>
-                            <input type="text" id="edit-username" required minlength="3" maxlength="24">
-                        </div>
-                        <small class="field-hint">Lettres minuscules, chiffres et underscores uniquement.</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="edit-bio">Biographie (facultatif)</label>
-                        <textarea id="edit-bio" rows="2" maxlength="160" placeholder="Quelques mots sur vous..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Adresse e-mail (privée)</label>
-                        <input type="text" id="edit-email-readonly" disabled class="input-readonly">
-                    </div>
-
-                    <div class="modal-footer-actions">
-                        <button type="button" class="btn btn-secondary modal-close" data-close="modal-profile">Annuler</button>
-                        <button type="submit" id="btn-save-profile" class="btn btn-primary">
-                            <span class="btn-text">Enregistrer</span>
-                            <span class="spinner hidden"></span>
-                        </button>
-                    </div>
+                    </label>
+                    <label>
+                        <span>Nom d'utilisateur</span>
+                        <input type="text" id="edit-username" required minlength="3" maxlength="24">
+                    </label>
+                    <label>
+                        <span>Biographie</span>
+                        <textarea id="edit-bio" rows="2" maxlength="160" placeholder="Quelques mots sur vous…"></textarea>
+                    </label>
+                    <label>
+                        <span>Adresse e-mail</span>
+                        <input type="email" id="edit-email-readonly" readonly disabled>
+                    </label>
+                    <button type="submit" id="btn-save-profile" class="btn-primary">Enregistrer</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- MODALE 2 : PROFIL D'UN AUTRE UTILISATEUR -->
-    <div id="modal-peer-profile" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-peer-title">
-        <div class="modal-card modal-card-sm">
+    <!-- Modale 2 : Profil du correspondant -->
+    <div id="modal-peer-profile" class="modal-backdrop hidden">
+        <div class="modal-card">
             <div class="modal-header">
-                <h3 id="modal-peer-title">Profil du contact</h3>
-                <button type="button" class="icon-btn modal-close" data-close="modal-peer-profile" aria-label="Fermer">&times;</button>
+                <h3>Profil du contact</h3>
+                <button type="button" class="modal-close" data-close="modal-peer-profile">&times;</button>
             </div>
-            <div class="modal-body peer-profile-details">
-                <div class="avatar-wrapper avatar-lg-wrapper">
-                    <img id="view-peer-avatar" src="" alt="Avatar" class="avatar avatar-lg hidden">
-                    <div id="view-peer-initials" class="avatar-initials avatar-lg">--</div>
+            <div class="modal-body peer-profile-view">
+                <div class="avatar-wrapper lg">
+                    <img id="view-peer-avatar" class="avatar-img hidden" alt="Avatar contact">
+                    <div id="view-peer-initials" class="avatar-initials">?</div>
                     <span id="view-peer-status-dot" class="status-dot status-offline"></span>
                 </div>
-                <h4 id="view-peer-fullname" class="peer-detail-name">Nom</h4>
-                <p id="view-peer-username" class="peer-detail-username">@username</p>
+                <h4 id="view-peer-fullname">Nom</h4>
+                <p id="view-peer-username" class="user-handle">@pseudo</p>
                 <span id="view-peer-status-badge" class="status-badge">Hors ligne</span>
-                <p id="view-peer-bio" class="peer-detail-bio">Aucune biographie renseignée.</p>
-                <div class="peer-detail-meta">
-                    <span>Membre depuis : <strong id="view-peer-joined">--</strong></span>
+                <p id="view-peer-bio" class="peer-bio-box"></p>
+                <small class="peer-joined">Membre depuis <span id="view-peer-joined"></span></small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale 3 : Aperçu Photo / Vidéo / Document avant envoi -->
+    <div id="modal-media-preview" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Aperçu avant envoi</h3>
+                <button type="button" class="modal-close" data-close="modal-media-preview">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="media-preview-stage">
+                    <img id="preview-stage-img" class="hidden" alt="Aperçu image">
+                    <video id="preview-stage-video" class="hidden" controls playsinline></video>
+                    <div id="preview-stage-doc" class="preview-doc-card hidden">
+                        <strong id="preview-doc-name">Document</strong>
+                    </div>
+                </div>
+                <div class="preview-caption-row">
+                    <input type="text" id="media-caption-input" placeholder="Ajouter une légende…">
+                    <button type="button" id="btn-confirm-send-media" class="btn-primary">Envoyer</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- MODALE 3 : CRÉATEUR DE STICKER -->
-    <div id="modal-sticker-creator" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <!-- Modale 4 : Créateur de Sticker -->
+    <div id="modal-sticker-creator" class="modal-backdrop hidden">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>Créer mon sticker</h3>
-                <button type="button" class="icon-btn modal-close" data-close="modal-sticker-creator" aria-label="Fermer">&times;</button>
+                <h3>Créer un sticker</h3>
+                <button type="button" class="modal-close" data-close="modal-sticker-creator">&times;</button>
             </div>
-            <div class="modal-body creator-body">
-                <input type="file" id="sticker-source-input" accept="image/png,image/jpeg,image/webp">
-                <canvas id="sticker-canvas" class="creator-canvas"></canvas>
+            <div class="modal-body stacked-form">
+                <input type="file" id="sticker-source-input" accept="image/*">
+                <canvas id="sticker-canvas" width="300" height="300" class="sticker-preview-canvas"></canvas>
                 <input type="text" id="sticker-caption-input" maxlength="24" placeholder="Texte sur le sticker (optionnel)">
                 <label class="checkbox-row">
                     <input type="checkbox" id="sticker-white-border" checked>
-                    <span>Contour blanc façon sticker</span>
+                    <span>Bordure blanche façon sticker</span>
                 </label>
-                <div class="modal-footer-actions">
-                    <button type="button" id="btn-save-sticker" class="btn btn-primary">Enregistrer & Envoyer</button>
-                </div>
+                <button type="button" id="btn-save-sticker" class="btn-primary">Enregistrer et envoyer</button>
             </div>
         </div>
     </div>
 
-    <!-- MODALE 4 : CRÉATEUR DE GIF -->
-    <div id="modal-gif-creator" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <!-- Modale 5 : Créateur de GIF animé -->
+    <div id="modal-gif-creator" class="modal-backdrop hidden">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>Créer mon GIF animé</h3>
-                <button type="button" class="icon-btn modal-close" data-close="modal-gif-creator" aria-label="Fermer">&times;</button>
+                <h3>Créer un GIF animé</h3>
+                <button type="button" class="modal-close" data-close="modal-gif-creator">&times;</button>
             </div>
-            <div class="modal-body creator-body">
-                <input type="file" id="gif-frames-input" accept="image/png,image/jpeg,image/webp" multiple>
+            <div class="modal-body stacked-form">
+                <input type="file" id="gif-frames-input" accept="image/*" multiple>
                 <small id="gif-frames-count">Sélectionnez 2 à 8 images</small>
-                <select id="gif-speed-select">
-                    <option value="150">Rapide (150 ms)</option>
-                    <option value="250" selected>Normal (250 ms)</option>
-                    <option value="450">Lent (450 ms)</option>
-                </select>
-                <button type="button" id="btn-generate-gif" class="btn btn-secondary" disabled>Générer le GIF</button>
-                <img id="gif-result-preview" alt="Aperçu GIF" class="gif-preview-img hidden">
-                <div class="modal-footer-actions">
-                    <button type="button" id="btn-send-created-gif" class="btn btn-primary hidden">Envoyer le GIF</button>
-                </div>
+                <label>
+                    <span>Vitesse d'animation</span>
+                    <select id="gif-speed-select">
+                        <option value="150">Rapide (150 ms)</option>
+                        <option value="250" selected>Normale (250 ms)</option>
+                        <option value="450">Lente (450 ms)</option>
+                    </select>
+                </label>
+                <button type="button" id="btn-generate-gif" class="btn-secondary-sm" disabled>Générer l'aperçu</button>
+                <img id="gif-result-preview" class="hidden gif-result-img" alt="Aperçu GIF">
+                <button type="button" id="btn-send-created-gif" class="btn-primary hidden">Envoyer le GIF</button>
             </div>
         </div>
     </div>
 
-    <!-- Scripts modulaires -->
+    <!-- Modale 6 : Transférer un message (v2.2) -->
+    <div id="modal-forward-message" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Transférer vers…</h3>
+                <button type="button" class="modal-close" data-close="modal-forward-message">&times;</button>
+            </div>
+            <div class="modal-body stacked-form">
+                <div id="forward-message-preview" class="forward-message-preview"></div>
+                <input type="search" id="forward-search-input" placeholder="Rechercher une discussion…" autocomplete="off">
+                <ul id="forward-conversations-list" class="forward-conversations-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS SUPABASE & MODULES APPLICATIFS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/presence.js"></script>
     <script src="js/profile.js"></script>
-    <script src="js/conversations.js"></script>
     <script src="js/users.js"></script>
+    <script src="js/conversations.js"></script>
     <script src="js/messages.js"></script>
     <script src="js/media.js"></script>
     <script src="js/app.js"></script>

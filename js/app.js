@@ -1,5 +1,7 @@
 /**
- * ORCHESTRATEUR PRINCIPAL DE L'APPLICATION (index.html)
+ * ORCHESTRATEUR PRINCIPAL DE L'APPLICATION V2.2 (index.html)
+ * (Disposition fixe type WhatsApp via visualViewport, navigation mobile + bouton Retour,
+ *  gestion du thème sombre/clair, déconnexion propre et synchronisation temps réel)
  */
 
 const AppController = {
@@ -35,7 +37,8 @@ const AppController = {
             MessagesModule.init(this.currentUser.id);
             await MediaModule.init(this.currentUser.id);
 
-            // 4. Brancher les événements d'interface
+            // 4. Verrouiller le viewport mobile (clavier) & brancher les événements UI
+            this.bindViewportKeyboard();
             this.bindUIEvents();
 
             // 5. Enregistrer le Service Worker pour l'installation mobile (PWA)
@@ -75,6 +78,51 @@ const AppController = {
     toggleTheme() {
         const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
         this.applyTheme(current === 'dark' ? 'light' : 'dark');
+    },
+
+    // =========================================================================
+    // VERROUILLAGE VIEWPORT TYPE WHATSAPP (HEADER FIXE + BARRE SAISIE AU-DESSUS DU CLAVIER)
+    // =========================================================================
+    bindViewportKeyboard() {
+        const updateViewportHeight = () => {
+            const vv = window.visualViewport;
+            const height = vv ? Math.round(vv.height) : window.innerHeight;
+            const offsetTop = vv ? Math.round(vv.offsetTop) : 0;
+
+            document.documentElement.style.setProperty('--app-height', `${height}px`);
+            document.documentElement.style.setProperty('--app-offset-top', `${offsetTop}px`);
+
+            const activeInput = document.activeElement;
+            if (activeInput && (activeInput.id === 'message-input' || activeInput.id === 'media-caption-input')) {
+                setTimeout(() => {
+                    MessagesModule.scrollToBottom(false);
+                }, 60);
+            }
+        };
+
+        updateViewportHeight();
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateViewportHeight);
+            window.visualViewport.addEventListener('scroll', updateViewportHeight);
+        }
+        window.addEventListener('resize', updateViewportHeight);
+    },
+
+    closeMobileChat() {
+        const shell = document.getElementById('app-shell');
+        if (!shell.classList.contains('mobile-chat-open')) return;
+
+        document.activeElement?.blur();
+        document.getElementById('attachment-drawer')?.classList.add('hidden');
+        document.getElementById('expression-picker')?.classList.add('hidden');
+
+        MessagesModule.cleanup();
+        MessagesModule.activeConversationId = null;
+
+        shell.classList.remove('mobile-chat-open');
+        ConversationsModule.setActiveConversation(null);
+        this.activePeer = null;
     },
 
     bindUIEvents() {
@@ -138,10 +186,17 @@ const AppController = {
             document.getElementById('user-search-input').focus();
         });
 
-        // Bouton retour mobile
+        // Bouton retour mobile (en-tête) + bouton retour matériel du téléphone
         document.getElementById('btn-back-mobile').addEventListener('click', () => {
-            document.getElementById('app-shell').classList.remove('mobile-chat-open');
-            ConversationsModule.setActiveConversation(null);
+            if (window.history.state && window.history.state.chatOpen) {
+                window.history.back();
+            } else {
+                this.closeMobileChat();
+            }
+        });
+
+        window.addEventListener('popstate', () => {
+            this.closeMobileChat();
         });
 
         // Ouverture profil du correspondant actif
@@ -237,10 +292,16 @@ const AppController = {
 
     async openConversation(conversationId, peerProfile) {
         this.activePeer = peerProfile;
+        const shell = document.getElementById('app-shell');
+        const wasAlreadyOpen = shell.classList.contains('mobile-chat-open');
 
         document.getElementById('chat-welcome').classList.add('hidden');
         document.getElementById('chat-active').classList.remove('hidden');
-        document.getElementById('app-shell').classList.add('mobile-chat-open');
+        shell.classList.add('mobile-chat-open');
+
+        if (!wasAlreadyOpen && window.innerWidth <= 768) {
+            window.history.pushState({ chatOpen: true, conversationId }, '');
+        }
 
         document.getElementById('peer-fullname').textContent = peerProfile.full_name;
         AppUtils.renderAvatar(
@@ -254,7 +315,9 @@ const AppController = {
         ConversationsModule.setActiveConversation(conversationId);
 
         await MessagesModule.openConversationMessages(conversationId);
-        document.getElementById('message-input').focus();
+        if (window.innerWidth > 768) {
+            document.getElementById('message-input').focus();
+        }
     },
 
     updateActivePeerHeaderStatus() {

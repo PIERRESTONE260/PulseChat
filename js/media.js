@@ -1,5 +1,5 @@
 /**
- * MODULE MULTIMÉDIA V2 :
+ * MODULE MULTIMÉDIA V2.2 :
  * - Audio façon Facebook Messenger (Pause/Reprendre, onde animée, Corbeille, Envoi direct)
  * - Émojis, Stickers & GIF avec mise en favoris des stickers/GIF reçus
  * - Aperçu photo / vidéo / document avec message légende avant envoi
@@ -137,6 +137,7 @@ const MediaModule = {
     resetFilePreviewModal() {
         const vidEl = document.getElementById('preview-stage-video');
         const imgEl = document.getElementById('preview-stage-img');
+        const captionInput = document.getElementById('media-caption-input');
         if (vidEl) {
             vidEl.pause();
             vidEl.removeAttribute('src');
@@ -145,6 +146,9 @@ const MediaModule = {
         if (imgEl) {
             imgEl.removeAttribute('src');
         }
+        if (captionInput) {
+            captionInput.value = '';
+        }
         if (this.pendingPreviewObjectUrl) {
             URL.revokeObjectURL(this.pendingPreviewObjectUrl);
             this.pendingPreviewObjectUrl = null;
@@ -152,9 +156,23 @@ const MediaModule = {
         this.pendingPreviewFile = null;
     },
 
+    _detectMessageMediaType(file) {
+        const mime = (file.type || '').toLowerCase();
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+
+        if (mime.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) {
+            return 'image';
+        }
+        if (mime.startsWith('video/') || ['mp4', 'webm', 'mov', 'avi', 'mkv', '3gp', 'm4v'].includes(ext)) {
+            return 'video';
+        }
+        return 'file';
+    },
+
     openFilePreviewModal(file) {
-        if (file.size > 20 * 1024 * 1024) {
-            alert('Le fichier dépasse la limite de 20 Mo.');
+        const maxBytes = 50 * 1024 * 1024; // 50 Mo max (adapté aux vidéos et documents)
+        if (file.size > maxBytes) {
+            alert('Le fichier dépasse la limite de 50 Mo.');
             return;
         }
 
@@ -171,16 +189,21 @@ const MediaModule = {
         docEl.classList.add('hidden');
         captionInput.value = document.getElementById('message-input').value.trim();
 
-        this.pendingPreviewObjectUrl = URL.createObjectURL(file);
+        const detectedType = this._detectMessageMediaType(file);
 
-        if (file.type.startsWith('image/')) {
+        if (detectedType === 'image') {
+            this.pendingPreviewObjectUrl = URL.createObjectURL(file);
             imgEl.src = this.pendingPreviewObjectUrl;
             imgEl.classList.remove('hidden');
-        } else if (file.type.startsWith('video/')) {
+        } else if (detectedType === 'video') {
+            this.pendingPreviewObjectUrl = URL.createObjectURL(file);
             vidEl.src = this.pendingPreviewObjectUrl;
             vidEl.classList.remove('hidden');
         } else {
-            document.getElementById('preview-doc-name').textContent = file.name;
+            const sizeKb = file.size < 1024 * 1024
+                ? `${Math.max(1, Math.round(file.size / 1024))} Ko`
+                : `${(file.size / (1024 * 1024)).toFixed(1)} Mo`;
+            document.getElementById('preview-doc-name').textContent = `${file.name} (${sizeKb})`;
             docEl.classList.remove('hidden');
         }
 
@@ -194,15 +217,28 @@ const MediaModule = {
         const file = this.pendingPreviewFile;
         const caption = document.getElementById('media-caption-input').value.trim();
         const confirmBtn = document.getElementById('btn-confirm-send-media');
+        const originalBtnText = confirmBtn.textContent;
+
         confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Envoi…';
 
         try {
-            const ext = file.name.split('.').pop().toLowerCase() || 'bin';
-            const path = `${this.currentUserId}/media_${Date.now()}.${ext}`;
+            const rawExt = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin';
+            const msgType = this._detectMessageMediaType(file);
+            const folder = msgType === 'video' ? 'videos' : msgType === 'file' ? 'docs' : 'images';
+            const path = `${this.currentUserId}/${folder}_${Date.now()}.${rawExt}`;
+
+            const uploadOptions = {
+                cacheControl: '3600',
+                upsert: false
+            };
+            if (file.type) {
+                uploadOptions.contentType = file.type;
+            }
 
             const { error: upErr } = await supabaseClient.storage
                 .from('chat-media')
-                .upload(path, file);
+                .upload(path, file, uploadOptions);
 
             if (upErr) throw upErr;
 
@@ -210,15 +246,15 @@ const MediaModule = {
                 .from('chat-media')
                 .getPublicUrl(path);
 
-            let msgType = 'file';
-            if (file.type.startsWith('image/')) msgType = 'image';
-            else if (file.type.startsWith('video/')) msgType = 'video';
-
             await MessagesModule.sendMediaMessage({
                 type: msgType,
                 mediaUrl: pub.publicUrl,
                 caption,
-                meta: { name: file.name, size: file.size }
+                meta: {
+                    name: file.name,
+                    size: file.size,
+                    mime: file.type || 'application/octet-stream'
+                }
             });
 
             const mainInput = document.getElementById('message-input');
@@ -229,9 +265,10 @@ const MediaModule = {
             document.getElementById('modal-media-preview').classList.add('hidden');
         } catch (err) {
             console.error('Erreur envoi fichier :', err);
-            alert("Impossible d'envoyer le fichier.");
+            alert(`Impossible d'envoyer le fichier (${err?.message || 'vérifiez la taille et le bucket chat-media'}).`);
         } finally {
             confirmBtn.disabled = false;
+            confirmBtn.textContent = originalBtnText;
         }
     },
 
