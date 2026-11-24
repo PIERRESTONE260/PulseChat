@@ -1,7 +1,7 @@
 /**
- * ORCHESTRATEUR PRINCIPAL DE L'APPLICATION V2.2 (index.html)
+ * ORCHESTRATEUR PRINCIPAL DE L'APPLICATION V2.2 / WHATSAPP PRO (index.html)
  * (Disposition fixe type WhatsApp via visualViewport, navigation mobile + bouton Retour,
- *  gestion du thème sombre/clair, déconnexion propre et synchronisation temps réel)
+ *  gestion du thème sombre/clair, déconnexion propre, synchronisation temps réel & statuts)
  */
 
 const AppController = {
@@ -30,12 +30,18 @@ const AppController = {
             });
 
             // 3. Initialiser tous les modules
-            await ProfileModule.loadCurrentProfile(this.currentUser);
+            const loadedProfile = await ProfileModule.loadCurrentProfile(this.currentUser);
+            const activeProfile = loadedProfile || ProfileModule.currentProfile || this.currentUser;
+
             await PresenceModule.init(this.currentUser.id);
             UsersModule.init(this.currentUser.id);
             await ConversationsModule.init(this.currentUser.id);
             MessagesModule.init(this.currentUser.id);
             await MediaModule.init(this.currentUser.id);
+
+            if (typeof WhatsAppPro !== 'undefined' && typeof WhatsAppPro.init === 'function') {
+                await WhatsAppPro.init(activeProfile);
+            }
 
             // 4. Verrouiller le viewport mobile (clavier) & brancher les événements UI
             this.bindViewportKeyboard();
@@ -271,8 +277,21 @@ const AppController = {
         }
     },
 
-    async startConversationWithUser(peerProfile) {
+    async startConversationWithUser(peerProfileOrId) {
         try {
+            let peerProfile = peerProfileOrId;
+            if (typeof peerProfileOrId === 'string') {
+                peerProfile =
+                    UsersModule?.cachedUsers?.find((u) => u.id === peerProfileOrId) || {
+                        id: peerProfileOrId,
+                        full_name: 'Contact',
+                        avatar_url: null,
+                        last_seen: null
+                    };
+            }
+
+            if (!peerProfile?.id) return;
+
             const { data: conversationId, error } = await supabaseClient.rpc('get_or_create_direct_conversation', {
                 target_user_id: peerProfile.id
             });

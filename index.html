@@ -501,6 +501,78 @@
         </div>
     </div>
 
+    <!-- Modale Pays & Numéro de téléphone (comptes existants / activation type WhatsApp) -->
+    <div id="modal-phone-onboarding" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Numéro & Pays</h3>
+                <button type="button" class="modal-close" data-close="modal-phone-onboarding">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="field-hint" style="margin-bottom: 12px;">
+                    Renseignez votre pays et votre numéro de téléphone pour échanger avec vos contacts comme sur WhatsApp.
+                </p>
+                <div id="phone-onboarding-alert" class="alert hidden"></div>
+                <form id="phone-onboarding-form" class="stacked-form">
+                    <label>
+                        <span>Pays</span>
+                        <select id="onboarding-country" required>
+                            <option value="+243|CD">République Démocratique du Congo (+243)</option>
+                            <option value="+33|FR">France (+33)</option>
+                            <option value="+32|BE">Belgique (+32)</option>
+                            <option value="+1|CA">Canada (+1)</option>
+                            <option value="+225|CI">Côte d'Ivoire (+225)</option>
+                            <option value="+237|CM">Cameroun (+237)</option>
+                            <option value="+221|SN">Sénégal (+221)</option>
+                            <option value="+250|RW">Rwanda (+250)</option>
+                            <option value="+255|TZ">Tanzanie (+255)</option>
+                            <option value="+27|ZA">Afrique du Sud (+27)</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>Numéro de téléphone</span>
+                        <input type="tel" id="onboarding-phone" required placeholder="Ex: 812345678" autocomplete="tel">
+                    </label>
+                    <button type="submit" id="btn-save-phone-onboarding" class="btn-primary">Valider mon numéro</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Statuts (liste + publication) -->
+    <div id="modal-statuses" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Statuts</h3>
+                <button type="button" class="modal-close" data-close="modal-statuses">&times;</button>
+            </div>
+            <div class="modal-body stacked-form">
+                <form id="create-status-form" class="stacked-form">
+                    <label>
+                        <span>Publier un statut</span>
+                        <textarea id="status-text-input" rows="2" maxlength="200" placeholder="Quoi de neuf ?"></textarea>
+                    </label>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <input type="color" id="status-bg-color" value="#1d4ed8" title="Couleur du statut">
+                        <label class="btn-secondary-sm" for="status-media-input" style="cursor:pointer;">
+                            Photo / Vidéo
+                            <input type="file" id="status-media-input" accept="image/*,video/*" class="hidden">
+                        </label>
+                        <button type="submit" id="btn-publish-status" class="btn-primary" style="margin-left:auto;">Publier</button>
+                    </div>
+                </form>
+                <hr style="border:none; border-top:1px solid var(--border-color);">
+                <div id="status-viewer-box" class="hidden" style="padding:14px; border-radius:12px; color:#fff;">
+                    <div id="status-viewer-author" style="font-size:0.8rem; opacity:0.9; margin-bottom:6px;"></div>
+                    <div id="status-viewer-content" style="font-size:1rem; font-weight:600;"></div>
+                    <img id="status-viewer-img" class="hidden" style="max-width:100%; border-radius:8px; margin-top:8px;" alt="Statut">
+                    <video id="status-viewer-video" class="hidden" controls playsinline style="max-width:100%; border-radius:8px; margin-top:8px;"></video>
+                </div>
+                <ul id="statuses-list" class="item-list"></ul>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPTS SUPABASE & MODULES APPLICATIFS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
@@ -511,5 +583,6 @@
     <script src="js/messages.js"></script>
     <script src="js/media.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/whatsapp-pro.js"></script>
 </body>
 </html>
