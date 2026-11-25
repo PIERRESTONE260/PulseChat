@@ -1,8 +1,7 @@
 /**
  * MODULE ANNUAIRE / CONTACTS V2.2 :
- * - Recherche par nom ou @pseudo
- * - Démarrage d'une discussion uniquement si l'utilisateur a le numéro de l'ami
- *   (saisi à la demande ou enregistré dans WhatsAppPro.myContactsPhones)
+ * - Recherche par nom, @pseudo ou numéro de téléphone
+ * - Communication ouverte entre utilisateurs ayant un compte PulseChat
  * - Aucun blocage ni suspension de compte
  */
 
@@ -110,13 +109,7 @@ const UsersModule = {
                 ? `<img src="${this.escapeHtml(user.avatar_url)}" alt="${this.escapeHtml(user.full_name)}" class="avatar-img">`
                 : `<div class="avatar-initials">${this.escapeHtml(initials)}</div>`;
 
-            const hasPhoneAlready = typeof WhatsAppPro !== 'undefined' && typeof WhatsAppPro.hasFriendPhone === 'function'
-                ? WhatsAppPro.hasFriendPhone(user)
-                : false;
-
-            const subtitleText = hasPhoneAlready && user.phone_e164
-                ? `@${this.escapeHtml(user.username)} • ${this.escapeHtml(user.phone_e164)}`
-                : `@${this.escapeHtml(user.username)} • Entrer le numéro pour discuter`;
+            const phoneLabel = user.phone_e164 ? ` • ${this.escapeHtml(user.phone_e164)}` : '';
 
             li.innerHTML = `
                 <div class="avatar-wrapper">
@@ -127,7 +120,7 @@ const UsersModule = {
                     <div class="list-item-top">
                         <span class="list-item-title user-name">${this.escapeHtml(user.full_name)}</span>
                     </div>
-                    <span class="list-item-sub user-handle">${subtitleText}</span>
+                    <span class="list-item-sub user-handle">@${this.escapeHtml(user.username)}${phoneLabel}</span>
                 </div>
             `;
 
@@ -140,34 +133,7 @@ const UsersModule = {
     },
 
     async handleContactSelect(friendProfile) {
-        if (typeof WhatsAppPro !== 'undefined' && typeof WhatsAppPro.hasFriendPhone === 'function') {
-            if (WhatsAppPro.hasFriendPhone(friendProfile)) {
-                await AppController.startConversationWithUser(friendProfile);
-                return;
-            }
-
-            const enteredPhone = prompt(
-                `Entrez le numéro de téléphone de ${friendProfile.full_name} pour démarrer la discussion :`
-            );
-            if (enteredPhone === null) return;
-
-            const cleanInput = enteredPhone.trim();
-            if (!cleanInput) {
-                alert('Veuillez saisir le numéro de téléphone de votre ami.');
-                return;
-            }
-
-            if (WhatsAppPro.hasFriendPhone(friendProfile, cleanInput)) {
-                if (friendProfile.phone_e164 && WhatsAppPro.myContactsPhones) {
-                    WhatsAppPro.myContactsPhones.add(friendProfile.phone_e164);
-                }
-                await AppController.startConversationWithUser(friendProfile);
-            } else {
-                alert('Ce numéro ne correspond pas au numéro enregistré de ce contact.');
-            }
-            return;
-        }
-
+        if (!friendProfile) return;
         await AppController.startConversationWithUser(friendProfile);
     },
 

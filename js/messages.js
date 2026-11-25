@@ -195,7 +195,7 @@ const MessagesModule = {
 
         if (error) {
             console.error('Erreur transfert message :', error);
-            alert('Impossible de transférer ce message.');
+            alert(`Impossible de transférer ce message (${error.message || 'erreur base de données'}).`);
             return;
         }
 
@@ -273,7 +273,6 @@ const MessagesModule = {
         });
 
         audio.addEventListener('play', () => {
-            // Mettre en pause les autres lecteurs actifs
             document.querySelectorAll('.custom-audio-player audio').forEach((other) => {
                 if (other !== audio && !other.paused) {
                     other.pause();
@@ -658,6 +657,7 @@ const MessagesModule = {
         this.updateScrollBottomBadge();
         document.getElementById('btn-scroll-bottom')?.classList.add('hidden');
         document.getElementById('chat-search-bar')?.classList.add('hidden');
+        document.getElementById('send-error-banner')?.classList.add('hidden');
         this.clearConversationSearch();
 
         clearTimeout(this.peerTypingTimeout);
@@ -1053,7 +1053,9 @@ const MessagesModule = {
                 this.appendMessageElement(data, true);
             }
         } catch (err) {
-            errorText.textContent = "Échec de l'envoi du message. Vérifiez votre connexion.";
+            console.error('Erreur envoi message :', err);
+            const detail = err?.message || 'Erreur inconnue';
+            errorText.textContent = `Échec de l'envoi : ${detail}`;
             errorBanner.classList.remove('hidden');
         } finally {
             this.isSending = false;
@@ -1080,7 +1082,8 @@ const MessagesModule = {
             .single();
 
         if (error) {
-            alert("Erreur lors de l'envoi du média.");
+            console.error('Erreur envoi média :', error);
+            alert(`Erreur lors de l'envoi du média (${error.message || 'vérifiez la base de données'}).`);
             return;
         }
 

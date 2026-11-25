@@ -1946,3 +1946,216 @@ html, body {
     border-radius: 14px;
     letter-spacing: 0.01em;
 }
+
+.statuses-page {
+    position: fixed;
+    top: var(--app-offset-top, 0px);
+    left: 0;
+    right: 0;
+    height: var(--app-height, 100dvh);
+    background: var(--bg-app, #f8fafc);
+    z-index: 45;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+@media (min-width: 769px) {
+    .statuses-page {
+        position: relative;
+        top: 0;
+        height: 100%;
+        flex: 1;
+        z-index: 10;
+    }
+}
+
+.statuses-page-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-header, #ffffff);
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    flex-shrink: 0;
+}
+
+.statuses-header-titles {
+    flex: 1;
+    min-width: 0;
+}
+
+.statuses-header-titles h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.statuses-header-titles small {
+    color: var(--text-muted, #64748b);
+}
+
+.statuses-scroll-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.my-status-card {
+    background: var(--bg-card, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.my-status-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-ring-wrap {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    border-radius: 50%;
+    padding: 2px;
+    border: 2px solid transparent;
+}
+
+.status-ring-wrap.has-status {
+    border-color: #16a34a;
+}
+
+.status-ring-wrap .avatar-img,
+.status-ring-wrap .avatar-initials {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.my-status-plus {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    background: #1d4ed8;
+    color: #ffffff;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.status-composer-form textarea {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--border-color, #cbd5e1);
+    padding: 10px;
+    resize: none;
+    background: var(--bg-input, #f1f5f9);
+    color: inherit;
+    font-family: inherit;
+}
+
+.status-composer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.statuses-section-title {
+    margin: 0 0 10px;
+    font-size: 0.9rem;
+    color: var(--text-muted, #64748b);
+}
+
+.statuses-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.status-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--bg-card, #ffffff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    cursor: pointer;
+}
+
+.status-contact-item:hover {
+    background: var(--bg-hover, #f1f5f9);
+}
+
+.status-viewer {
+    position: fixed;
+    inset: 0;
+    background: #0b1220;
+    color: #ffffff;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 14px;
+}
+
+.status-viewer-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-viewer-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 16px;
+    overflow: hidden;
+}
+
+.status-viewer-text-card {
+    width: 100%;
+    max-width: 440px;
+    min-height: 260px;
+    border-radius: 18px;
+    padding: 28px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.status-viewer-media {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 14px;
+    object-fit: contain;
+}
+
+.status-viewer-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
