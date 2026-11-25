@@ -18,7 +18,8 @@ const STATIC_ASSETS = [
   './js/conversations.js',
   './js/messages.js',
   './js/media.js',
-  './js/statuses-page.js',
+  './js/statuses-pages.js',
+  './js/whatsapp-pro.js',
   './js/app.js',
   './assets/icons/logo.svg',
   './manifest.json'

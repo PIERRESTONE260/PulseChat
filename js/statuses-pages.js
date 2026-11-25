@@ -160,7 +160,8 @@ const StatusesPageModule = {
             ? ConversationsModule.conversations
             : [];
         convs.forEach((c) => {
-            if (c.peer_id) ids.add(c.peer_id);
+            const peerId = c.peer?.id || c.peer_id;
+            if (peerId) ids.add(peerId);
         });
 
         const cachedUsers = Array.isArray(UsersModule?.cachedUsers)
@@ -268,11 +269,13 @@ const StatusesPageModule = {
             const profilesMap = new Map();
             (UsersModule?.cachedUsers || []).forEach((u) => profilesMap.set(u.id, u));
             (ConversationsModule?.conversations || []).forEach((c) => {
-                if (c.peer_id && !profilesMap.has(c.peer_id)) {
-                    profilesMap.set(c.peer_id, {
-                        id: c.peer_id,
-                        full_name: c.peer_full_name || 'Correspondant',
-                        avatar_url: c.peer_avatar_url || null
+                const peer = c.peer;
+                const peerId = peer?.id || c.peer_id;
+                if (peerId && !profilesMap.has(peerId)) {
+                    profilesMap.set(peerId, {
+                        id: peerId,
+                        full_name: peer?.full_name || c.peer_full_name || 'Correspondant',
+                        avatar_url: peer?.avatar_url || c.peer_avatar_url || null
                     });
                 }
             });
@@ -281,7 +284,6 @@ const StatusesPageModule = {
 
             (data || []).forEach((st) => {
                 if (st.user_id === this.currentUserId) return;
-                // Filtre strict sur les correspondants (discussions & contacts téléphone)
                 if (allowedIds.size > 0 && !allowedIds.has(st.user_id)) return;
 
                 if (!groupsByUser.has(st.user_id)) {

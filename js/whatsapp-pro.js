@@ -1,15 +1,11 @@
 /**
  * MODULE WHATSAPP PRO V1 :
  * - Pays & numéro de téléphone au login pour comptes existants (sans blocage)
- * - Communication initiée à partir du numéro de l'ami (façon WhatsApp)
- * - Statuts (24h, texte / photo / vidéo)
- * - Rendu des messages type WhatsApp
+ * - Groupement visuel des messages type WhatsApp
  */
 
 const WhatsAppPro = {
     currentUser: null,
-    myContactsPhones: new Set(),
-    statuses: [],
 
     normalizePhone(countryCode, rawPhone) {
         const dial = (countryCode || '+243').replace(/[^\d+]/g, '');
@@ -28,9 +24,7 @@ const WhatsAppPro = {
     async init(userProfile) {
         this.currentUser = userProfile;
         this.bindPhoneOnboarding();
-        this.bindStatuses();
         this.enhanceChatBubbleGrouping();
-        await this.loadStatuses();
 
         if (!userProfile?.phone_e164 || !userProfile?.country_code) {
             this.openPhoneOnboardingModal();
@@ -103,190 +97,14 @@ const WhatsAppPro = {
             }
 
             this.currentUser = data;
+            if (typeof ProfileModule !== 'undefined') {
+                ProfileModule.currentProfile = data;
+            }
             alertEl.classList.add('hidden');
             modal.classList.add('hidden');
         });
     },
 
-    // Vérifie si l'utilisateur a le numéro de l'ami avant de démarrer une discussion
-    hasFriendPhone(friendProfile, enteredPhone = '') {
-        const targetE164 = friendProfile?.phone_e164 || '';
-        const normalizedEntered = enteredPhone
-            ? this.normalizePhone(`+${(this.currentUser?.country_code === 'FR' ? '33' : '243')}`, enteredPhone)
-            : '';
-
-        if (normalizedEntered && targetE164 && normalizedEntered === targetE164) {
-            return true;
-        }
-        return Boolean(targetE164 && this.myContactsPhones.has(targetE164));
-    },
-
-    async startChatWithFriendByPhone(friendProfile, enteredPhone = '') {
-        if (!this.hasFriendPhone(friendProfile, enteredPhone)) {
-            alert("Ajoutez ou saisissez le numéro de téléphone de votre ami pour démarrer la discussion.");
-            return false;
-        }
-        if (typeof AppController?.startConversationWithUser === 'function') {
-            await AppController.startConversationWithUser(friendProfile.id);
-            return true;
-        }
-        return false;
-    },
-
-    // =========================================================================
-    // STATUTS (24H)
-    // =========================================================================
-    bindStatuses() {
-        const headerActions = document.querySelector('.sidebar-header-actions');
-        if (headerActions && !document.getElementById('btn-open-statuses')) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.id = 'btn-open-statuses';
-            btn.className = 'icon-btn';
-            btn.title = 'Statuts';
-            btn.innerHTML = `
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="9" stroke-dasharray="4 3"></circle>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-            `;
-            btn.addEventListener('click', async () => {
-                await this.loadStatuses();
-                this.renderStatusesList();
-                document.getElementById('modal-statuses')?.classList.remove('hidden');
-            });
-            headerActions.prepend(btn);
-        }
-
-        document.querySelector('#modal-statuses .modal-close')?.addEventListener('click', () => {
-            document.getElementById('modal-statuses')?.classList.add('hidden');
-        });
-
-        document.getElementById('create-status-form')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await this.publishStatus();
-        });
-    },
-
-    async loadStatuses() {
-        const nowIso = new Date().toISOString();
-        const { data } = await supabaseClient
-            .from('user_statuses')
-            .select('*, profiles(full_name, username)')
-            .gt('expires_at', nowIso)
-            .order('created_at', { ascending: false });
-
-        this.statuses = data || [];
-    },
-
-    async publishStatus() {
-        if (!this.currentUser?.id) return;
-        const textInp = document.getElementById('status-text-input');
-        const colorInp = document.getElementById('status-bg-color');
-        const mediaInp = document.getElementById('status-media-input');
-        const btn = document.getElementById('btn-publish-status');
-
-        const content = (textInp?.value || '').trim();
-        const bgColor = colorInp?.value || '#1d4ed8';
-        const file = mediaInp?.files?.[0] || null;
-
-        if (!content && !file) return;
-
-        btn.disabled = true;
-        try {
-            let mediaUrl = null;
-            let mediaType = 'text';
-
-            if (file) {
-                mediaType = file.type.startsWith('video/') ? 'video' : 'image';
-                const ext = file.name.split('.').pop()?.toLowerCase() || 'bin';
-                const path = `${this.currentUser.id}/status_${Date.now()}.${ext}`;
-                const { error: upErr } = await supabaseClient.storage.from('chat-media').upload(path, file);
-                if (upErr) throw upErr;
-                const { data: pub } = supabaseClient.storage.from('chat-media').getPublicUrl(path);
-                mediaUrl = pub.publicUrl;
-            }
-
-            const { error } = await supabaseClient.from('user_statuses').insert({
-                user_id: this.currentUser.id,
-                media_type: mediaType,
-                content,
-                media_url: mediaUrl,
-                bg_color: bgColor
-            });
-
-            if (error) throw error;
-
-            if (textInp) textInp.value = '';
-            if (mediaInp) mediaInp.value = '';
-            await this.loadStatuses();
-            this.renderStatusesList();
-        } catch (err) {
-            console.error('Erreur statut :', err);
-            alert('Impossible de publier le statut.');
-        } finally {
-            btn.disabled = false;
-        }
-    },
-
-    renderStatusesList() {
-        const listEl = document.getElementById('statuses-list');
-        if (!listEl) return;
-        listEl.innerHTML = '';
-
-        if (this.statuses.length === 0) {
-            listEl.innerHTML = '<li class="panel-state"><small>Aucun statut actif pour le moment.</small></li>';
-            return;
-        }
-
-        this.statuses.forEach((st) => {
-            const li = document.createElement('li');
-            li.className = 'list-item';
-            const author = st.profiles?.full_name || 'Utilisateur';
-            const summary = st.content || (st.media_type === 'video' ? 'Statut vidéo' : 'Statut photo');
-            li.innerHTML = `
-                <div class="list-item-body">
-                    <span class="list-item-title">${UsersModule.escapeHtml(author)}</span>
-                    <span class="list-item-sub">${UsersModule.escapeHtml(summary)}</span>
-                </div>
-                <span class="list-item-time">${AppUtils.formatMessageTime(st.created_at)}</span>
-            `;
-            li.addEventListener('click', () => this.showStatusInViewer(st));
-            listEl.appendChild(li);
-        });
-    },
-
-    showStatusInViewer(st) {
-        const box = document.getElementById('status-viewer-box');
-        const authorEl = document.getElementById('status-viewer-author');
-        const contentEl = document.getElementById('status-viewer-content');
-        const imgEl = document.getElementById('status-viewer-img');
-        const vidEl = document.getElementById('status-viewer-video');
-        if (!box) return;
-
-        box.style.backgroundColor = st.bg_color || '#1d4ed8';
-        authorEl.textContent = st.profiles?.full_name || 'Statut';
-        contentEl.textContent = st.content || '';
-        contentEl.classList.toggle('hidden', !st.content);
-
-        imgEl.classList.add('hidden');
-        vidEl.classList.add('hidden');
-        vidEl.pause();
-
-        if (st.media_type === 'image' && st.media_url) {
-            imgEl.src = st.media_url;
-            imgEl.classList.remove('hidden');
-        } else if (st.media_type === 'video' && st.media_url) {
-            vidEl.src = st.media_url;
-            vidEl.classList.remove('hidden');
-        }
-
-        box.classList.remove('hidden');
-    },
-
-    // =========================================================================
-    // GROUPEMENT VISUEL DES MESSAGES (STYLE WHATSAPP)
-    // =========================================================================
     enhanceChatBubbleGrouping() {
         const list = document.getElementById('messages-list');
         if (!list) return;
