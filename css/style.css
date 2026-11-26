@@ -2159,3 +2159,220 @@ html, body {
     justify-content: space-between;
     gap: 12px;
 }
+
+/* =========================================================================
+   AUDIO COMPACT & COMPTEUR DE TEMPS VISIBLE (ENREGISTREMENT & LECTURE)
+   ========================================================================= */
+
+.messenger-audio-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    margin: 0 6px 4px;
+    background: var(--surface-elevated, var(--bg-secondary, #f1f5f9));
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.1));
+    border-radius: 999px;
+}
+
+.messenger-audio-bar.hidden {
+    display: none;
+}
+
+.audio-waveform {
+    flex: 1;
+    min-width: 0;
+    height: 30px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-radius: 999px;
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.08));
+}
+
+.audio-waveform::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ef4444;
+    flex-shrink: 0;
+    animation: pulsechat-rec-blink 1.1s infinite ease-in-out;
+}
+
+.audio-timer,
+.audio-live-counter,
+.audio-duration {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: var(--text-primary, #0f172a);
+    white-space: nowrap;
+}
+
+.mic-btn,
+.send-btn {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.12s ease, background-color 0.15s ease;
+}
+
+.mic-btn {
+    background: var(--bg-secondary, #e2e8f0);
+    color: var(--text-primary, #0f172a);
+}
+
+.mic-btn.recording {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.send-btn {
+    background: var(--primary-color, #1d4ed8);
+    color: #ffffff;
+}
+
+/* Lecteur audio compact dans les bulles de messages avec compteur bien lisible */
+.audio-message-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    margin: 2px 0;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.05);
+    min-width: 190px;
+    max-width: 250px;
+}
+
+.message-row.sent .audio-message-box {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.audio-play-btn {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: var(--primary-color, #1d4ed8);
+    color: #ffffff;
+    font-size: 0.75rem;
+}
+
+.audio-progress-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.audio-progress-bar {
+    width: 100%;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(100, 116, 139, 0.3);
+    overflow: hidden;
+}
+
+.audio-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--primary-color, #2563eb);
+    transition: width 0.1s linear;
+}
+
+.audio-time-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.message-row audio,
+.message-bubble audio,
+.audio-message-player {
+    width: 100%;
+    max-width: 230px;
+    height: 32px;
+    margin: 2px 0;
+    display: block;
+}
+
+/* Mode sombre */
+[data-theme="dark"] .messenger-audio-bar {
+    background: #1e293b;
+    border-color: rgba(148, 163, 184, 0.16);
+}
+
+[data-theme="dark"] .audio-waveform {
+    background: #0f172a;
+    border-color: rgba(148, 163, 184, 0.12);
+}
+
+[data-theme="dark"] .audio-timer,
+[data-theme="dark"] .audio-live-counter,
+[data-theme="dark"] .audio-duration,
+[data-theme="dark"] .audio-time-row {
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .mic-btn {
+    background: #334155;
+    color: #f8fafc;
+}
+
+@keyframes pulsechat-rec-blink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+@media (max-width: 768px) {
+    .messenger-audio-bar {
+        margin: 0 4px 4px;
+        padding: 3px 6px;
+        gap: 4px;
+    }
+
+    .audio-waveform {
+        height: 28px;
+        padding: 0 8px;
+    }
+
+    .mic-btn,
+    .send-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .audio-message-box {
+        min-width: 170px;
+        max-width: 215px;
+        padding: 3px 6px;
+    }
+}

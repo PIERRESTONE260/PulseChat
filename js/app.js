@@ -218,6 +218,59 @@ const AppController = {
             this.toggleTheme();
         });
 
+        // Liaison directe du clic sur un contact dans l'onglet Contacts
+        const usersListEl = document.getElementById('users-list');
+        if (usersListEl && !usersListEl.dataset.chatBound) {
+            usersListEl.dataset.chatBound = '1';
+            usersListEl.addEventListener('click', async (e) => {
+                const item = e.target.closest('li, .user-item, .contact-item, .list-item');
+                if (!item) return;
+
+                let peerId = item.dataset.userId || item.dataset.id || item.getAttribute('data-user-id');
+
+                // Secours si l'élément <li> n'a pas d'attribut data-user-id
+                if (!peerId && typeof UsersModule !== 'undefined' && Array.isArray(UsersModule.cachedUsers)) {
+                    const items = Array.from(usersListEl.children);
+                    const idx = items.indexOf(item);
+                    if (idx >= 0 && UsersModule.cachedUsers[idx]) {
+                        peerId = UsersModule.cachedUsers[idx].id;
+                    }
+                }
+
+                if (!peerId) {
+                    console.warn('Impossible de récupérer l’ID du contact cliqué.');
+                    return;
+                }
+
+                try {
+                    // 1. Utilise la méthode existante d'AppController si disponible
+                    if (typeof AppController !== 'undefined' && typeof AppController.startConversationWithUser === 'function') {
+                        await AppController.startConversationWithUser(peerId);
+                        return;
+                    }
+
+                    // 2. Sinon, création / récupération directe via ConversationsModule
+                    if (typeof ConversationsModule !== 'undefined' && typeof ConversationsModule.getOrCreateConversation === 'function') {
+                        const conv = await ConversationsModule.getOrCreateConversation(peerId);
+                        if (conv && typeof ConversationsModule.openConversation === 'function') {
+                            await ConversationsModule.openConversation(conv.id);
+                        }
+                    }
+
+                    // 3. Basculer l'interface vers la vue Discussions + ouvrir le panneau mobile
+                    document.querySelectorAll('.tab-btn').forEach((btn) => {
+                        btn.classList.toggle('active', btn.dataset.tab === 'conversations');
+                    });
+                    document.getElementById('users-view')?.classList.add('hidden');
+                    document.getElementById('conversations-view')?.classList.remove('hidden');
+                    document.getElementById('app-shell')?.classList.add('mobile-chat-open');
+                } catch (err) {
+                    console.error('Erreur ouverture discussion depuis Contacts :', err);
+                    alert("Impossible d'ouvrir la discussion : " + (err?.message || 'vérifiez la console'));
+                }
+            });
+        }
+
         // Déconnexion propre (la redirection est gérée par onAuthStateChange)
         document.getElementById('btn-logout')?.addEventListener('click', async () => {
             if (typeof PresenceModule !== 'undefined' && typeof PresenceModule.cleanup === 'function') {
@@ -340,17 +393,77 @@ const AppController = {
             document.getElementById('expression-picker')?.classList.add('hidden');
         });
 
+        // Amélioration : touche Échap pour fermer modales ou tiroirs ouverts
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            const visibleModal = Array.from(document.querySelectorAll('.modal-backdrop')).find(
+                (m) => !m.classList.contains('hidden')
+            );
+            if (visibleModal) {
+                visibleModal.classList.add('hidden');
+                return;
+            }
+            document.getElementById('attachment-drawer')?.classList.add('hidden');
+            document.getElementById('expression-picker')?.classList.add('hidden');
+        });
+
         // Mise à jour dynamique des statuts en ligne
         document.addEventListener('presence:updated', () => {
             UsersModule?.refreshPresenceIndicators?.();
             this.updateActivePeerHeaderStatus();
         });
 
-        // Détection perte / retour de connexion navigateur
+        // Détection perte / retour de connexion navigateur + resynchronisation au retour en ligne
         const connBanner = document.getElementById('connection-banner');
         if (connBanner) {
             window.addEventListener('offline', () => connBanner.classList.remove('hidden'));
-            window.addEventListener('online', () => connBanner.classList.add('hidden'));
+            window.addEventListener('online', async () => {
+                connBanner.classList.add('hidden');
+                if (typeof ConversationsModule !== 'undefined' && typeof ConversationsModule.loadConversations === 'function') {
+                    await ConversationsModule.loadConversations();
+                }
+                UsersModule?.refreshPresenceIndicators?.();
+            });
+        }
+
+        // Compteur visible qui défile pendant la lecture de tout élément <audio>
+        const formatSec = (sec) => {
+            if (!Number.isFinite(sec) || sec < 0) return '0:00';
+            const total = Math.floor(sec);
+            const m = Math.floor(total / 60);
+            const s = total % 60;
+            return `${m}:${String(s).padStart(2, '0')}`;
+        };
+
+        const attachAudioLiveCounter = (audioEl) => {
+            if (!audioEl || audioEl.dataset.counterBound) return;
+            audioEl.dataset.counterBound = '1';
+
+            const counter = document.createElement('span');
+            counter.className = 'audio-live-counter';
+            counter.textContent = '0:00';
+            audioEl.insertAdjacentElement('afterend', counter);
+
+            const syncTime = () => {
+                const durText = Number.isFinite(audioEl.duration) && audioEl.duration > 0
+                    ? ` / ${formatSec(audioEl.duration)}`
+                    : '';
+                counter.textContent = `${formatSec(audioEl.currentTime)}${durText}`;
+            };
+
+            audioEl.addEventListener('loadedmetadata', syncTime);
+            audioEl.addEventListener('timeupdate', syncTime);
+            audioEl.addEventListener('ended', () => {
+                counter.textContent = `0:00${Number.isFinite(audioEl.duration) && audioEl.duration > 0 ? ` / ${formatSec(audioEl.duration)}` : ''}`;
+            });
+        };
+
+        document.querySelectorAll('audio').forEach(attachAudioLiveCounter);
+        const msgList = document.getElementById('messages-list');
+        if (msgList) {
+            new MutationObserver(() => {
+                msgList.querySelectorAll('audio').forEach(attachAudioLiveCounter);
+            }).observe(msgList, { childList: true, subtree: true });
         }
     },
 
@@ -395,11 +508,58 @@ const AppController = {
 
             if (!peerProfile || !peerProfile.id) return;
 
-            const { data: conversationId, error } = await supabaseClient.rpc('get_or_create_direct_conversation', {
-                target_user_id: peerProfile.id
-            });
+            let conversationId = null;
 
-            if (error) throw error;
+            const { data: rpcId, error: rpcError } = await supabaseClient.rpc(
+                'get_or_create_direct_conversation',
+                { target_user_id: peerProfile.id }
+            );
+
+            if (!rpcError && rpcId) {
+                conversationId = rpcId;
+            } else {
+                // Amélioration : secours direct si la fonction RPC n'est pas encore créée côté Supabase
+                const myId = this.currentUser?.id;
+                if (!myId) throw rpcError || new Error('Session introuvable');
+
+                const { data: myRows, error: myErr } = await supabaseClient
+                    .from('conversation_members')
+                    .select('conversation_id')
+                    .eq('user_id', myId);
+                if (myErr) throw myErr;
+
+                const myConvIds = (myRows || []).map((r) => r.conversation_id);
+                if (myConvIds.length > 0) {
+                    const { data: shared } = await supabaseClient
+                        .from('conversation_members')
+                        .select('conversation_id')
+                        .eq('user_id', peerProfile.id)
+                        .in('conversation_id', myConvIds)
+                        .limit(1);
+                    if (shared && shared[0]) {
+                        conversationId = shared[0].conversation_id;
+                    }
+                }
+
+                if (!conversationId) {
+                    const { data: createdConv, error: convErr } = await supabaseClient
+                        .from('conversations')
+                        .insert({ last_message_preview: 'Nouvelle conversation' })
+                        .select('id')
+                        .single();
+                    if (convErr) throw convErr;
+
+                    conversationId = createdConv.id;
+
+                    const { error: partErr } = await supabaseClient
+                        .from('conversation_members')
+                        .insert([
+                            { conversation_id: conversationId, user_id: myId },
+                            { conversation_id: conversationId, user_id: peerProfile.id }
+                        ]);
+                    if (partErr) throw partErr;
+                }
+            }
 
             StatusesPageModule?.closePage?.();
             const searchInput = document.getElementById('user-search-input');
@@ -413,6 +573,7 @@ const AppController = {
             await this.openConversation(conversationId, peerProfile);
         } catch (err) {
             console.error('Impossible de démarrer la conversation :', err);
+            alert(`Impossible d'ouvrir la discussion : ${err?.message || 'erreur inconnue'}`);
         }
     },
 
